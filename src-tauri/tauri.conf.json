@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Agent World",
+  "version": "0.1.0",
+  "identifier": "com.amlabs.pixelops",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "AM Labs · Agent World",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "DeveloperTool",
+    "icon": ["icons/agent-world.icns"],
+    "shortDescription": "Visual read-only supervision for Hermes agents",
+    "resources": {
+      "../LICENSE": "licenses/AGENT-WORLD-LICENSE.txt",
+      "../THIRD_PARTY_NOTICES.md": "licenses/README.md",
+      "../docs/third-party/": "licenses/"
+    },
+    "macOS": { "minimumSystemVersion": "12.3" }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "bundle": {
+    "resources": { "resources/collectors/": "collectors/", "resources/build-info.json": "build-info.json" }
+  }
+}

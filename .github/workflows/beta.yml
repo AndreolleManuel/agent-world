@@ -1,0 +1,86 @@
+name: Verify and build beta artifacts (no release)
+# Deliberately manual: no publication, tag or release is created by this workflow.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: beta-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  collectors:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            arch: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install build tools on the disposable runner
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Select Rust and native static target
+        run: rustup toolchain install 1.98.0 --profile minimal && rustup default 1.98.0 && rustup target add ${{ matrix.target }}
+      - name: Test and build collector on its real Linux architecture
+        env:
+          RUSTFLAGS: -C target-feature=+crt-static -C linker=musl-gcc
+          CC: musl-gcc
+        run: |
+          cargo test --locked --manifest-path collector/Cargo.toml --target ${{ matrix.target }}
+          cargo build --release --locked --manifest-path collector/Cargo.toml --target ${{ matrix.target }}
+          mkdir -p release
+          cp collector/target/${{ matrix.target }}/release/agent-world-collector release/agent-world-collector-linux-${{ matrix.arch }}
+          release/agent-world-collector-linux-${{ matrix.arch }} --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: collector-${{ matrix.arch }}
+          path: release/agent-world-collector-linux-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 14
+  mac:
+    needs: collectors
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: rustup toolchain install 1.98.0 --profile minimal && rustup default 1.98.0 && rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: collector-*
+          path: release/collectors
+          merge-multiple: true
+      - run: npm ci
+      - name: Verify app and release contents
+        run: |
+          npm run lint
+          npm test
+          node --test scripts/*.test.mjs
+          cargo test --locked --manifest-path src-tauri/Cargo.toml
+          node scripts/prepare-collectors.mjs release/collectors
+      - name: Build universal Mac beta (ad-hoc, not notarized)
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: npm run build:beta
+      - name: Assemble the same checked download package as the local build
+        run: npm run package:beta
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Agent-World-beta-UNNOTARIZED
+          path: |
+            release/beta-*/*
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,133 @@
+{
+  "reviewed": true,
+  "reviewedAt": "2026-09-06",
+  "holder": "Manuel Andreolle",
+  "license": "MIT",
+  "scope": [
+    "src/assets",
+    "src-tauri/icons",
+    "fonts",
+    "docs/screenshots"
+  ],
+  "basis": "Maintainer confirmed that all project visuals were created for this project and authorized open-source publication. No third-party pack was reported.",
+  "limitation": "Maintainer attestation, not an independent legal certification. No exclusive copyright is claimed over purely AI-generated material or third-party components. MIT grants only rights held by the contributors.",
+  "assets": [
+    {
+      "file": "src-tauri/icons/agent-world.icns",
+      "sha256": "321f61a4083bf8d7839671dc7d45494c6099c36a0a45fc5250085ac91d670e47"
+    },
+    {
+      "file": "src-tauri/icons/agent-world.svg",
+      "sha256": "f255880cb3de732b1500632635ac6f66de202c30193575542ecd379c41064e71"
+    },
+    {
+      "file": "src-tauri/icons/icon.png",
+      "sha256": "2b8e73d47c127f81b204ddb76d0a9cf107f60512e210ee3ba83ac0232c835159"
+    },
+    {
+      "file": "src/assets/am-labs-armchair-premium-v1.png",
+      "sha256": "099f37c980d618dca4a524af5462f88328db7566d33d7ba2179708e9de3a1b6a"
+    },
+    {
+      "file": "src/assets/am-labs-empty-shell-v1.png",
+      "sha256": "e092a163eee18e8b1ef7d13ae4d71d8e8ec375c6c9f655db447f824507361775"
+    },
+    {
+      "file": "src/assets/am-labs-human-poses-16bit-v1.png",
+      "sha256": "93fcb5e034c24f3ba4f536bc9a50b232f5e7c3ca92b67152279fe770e22db270"
+    },
+    {
+      "file": "src/assets/am-labs-human-rear-seated-16bit-v1.png",
+      "sha256": "12a9aaee73fd01fca7eb2717c0eb5680a9b1a5e6da3a4623f20561c90491b295"
+    },
+    {
+      "file": "src/assets/am-labs-human-variants-16bit-v1.png",
+      "sha256": "7c522d022a1f8510df3754de5b10aa66a2ef6cb1a0442e9d6d76da4907d90821"
+    },
+    {
+      "file": "src/assets/am-labs-human-variants-16bit-v2.png",
+      "sha256": "d4b5cb01c034cef30e0e93ae1b3ef18708193cea7b01cf08a1b598806026c20b"
+    },
+    {
+      "file": "src/assets/am-labs-human-variants-16bit-v3.png",
+      "sha256": "feafc7495d8e949f8deb0b88fbe48a57173904eaae2449215845ba9a09af3882"
+    },
+    {
+      "file": "src/assets/am-labs-kitchen-premium-v1.png",
+      "sha256": "e23a2788756a60fea6b8f6d4802131f2018907e0ccfad8f109301e08740d84e2"
+    },
+    {
+      "file": "src/assets/am-labs-lab-16bit-v1.png",
+      "sha256": "d6c4f2f470b3a38487647b7d39b806de1307f43d728e9e77327a212afe5f09f0"
+    },
+    {
+      "file": "src/assets/am-labs-lab-base-without-desks-v2.png",
+      "sha256": "90b214ee38e542f4855458275d91f05db662a6e6b6cb95fa3e05176b626db652"
+    },
+    {
+      "file": "src/assets/am-labs-lounge-pouf-16bit-v1.png",
+      "sha256": "c05ad78b78d608199a6a268eb1f666f9e5eb4f7320cfe9152a1af08f609289e8"
+    },
+    {
+      "file": "src/assets/am-labs-lounge-stool-16bit-v1.png",
+      "sha256": "9441a4befcda5ccbfe325563584471a78ae1d7ad672c3d72d942836915317dab"
+    },
+    {
+      "file": "src/assets/am-labs-restored-static-v1.png",
+      "sha256": "6ee37964d9b6e7a07ea6faed10b7333dda2d5fc4770b204c842e651a68072e21"
+    },
+    {
+      "file": "src/assets/am-labs-sofa-premium-v1.png",
+      "sha256": "0eb10cbb94b95a00c22d80fa7badcfb8a8d3d1a7997456da755efd275458c39e"
+    },
+    {
+      "file": "src/assets/am-labs-workstation-kit-16bit-v1.png",
+      "sha256": "a3ff82765e3b3c8f4cd13fe45e4954a03ec515cdcde64fdd475f63675260bdf5"
+    },
+    {
+      "file": "src/assets/am-labs-workstation-premium-v1.png",
+      "sha256": "4641366779d8efc106315f02a4cba5ce74cba7586b433c3d419228c0b25e8e39"
+    },
+    {
+      "file": "src/assets/am-labs-workstations-overlay-alpha-v3.png",
+      "sha256": "d6914df978d054edb346c9ef86fd47c4d3ebd356823a6e64711939eaffb0d68e"
+    },
+    {
+      "file": "src/assets/armchair-back-v1.png",
+      "sha256": "19dc4b61948adbf72a75d2deda2f65a40e64c05f248010cb3922900a06203724"
+    },
+    {
+      "file": "src/assets/armchair-front-v1.png",
+      "sha256": "cff501686e2813910149dd69fa2a106595ca94f4bbe1cd7028168d4443cb61d2"
+    },
+    {
+      "file": "src/assets/kitchen-back-v1.png",
+      "sha256": "74392949db701136a7a74082194099dfc393afacae20b64262aa78a0d2af4eab"
+    },
+    {
+      "file": "src/assets/kitchen-front-v1.png",
+      "sha256": "c08fd72ec91bcef8fdc5d421e8d30afd98c7650c3ff35e9668772bec33510787"
+    },
+    {
+      "file": "src/assets/sofa-back-v1.png",
+      "sha256": "5697e2d278bfedb62f4eb9d807f32c0818f6474f629964ba475bfbcf0a8c6141"
+    },
+    {
+      "file": "src/assets/sofa-front-v1.png",
+      "sha256": "f435e91b4fcb2e1d068cdc0ab630f066a5f8457a957d9c09df22356a1af2756a"
+    },
+    {
+      "file": "src/assets/workstation-back-v1.png",
+      "sha256": "c0cc8158b13bb9180df5eb9d08b8ccf231856951b4f5370d7599e9979b5ee7ac"
+    },
+    {
+      "file": "src/assets/workstation-front-v1.png",
+      "sha256": "50e882ad903c180fb32cf37e47a23f3ed3fd65d5300caa1fd40e65e1df418569"
+    },
+    {
+      "file": "docs/screenshots/agent-world-demo.png",
+      "sha256": "0c70872b50c21e718e99ae68861a8a78d8dcc55daea6c8aa88690ce83f3a7893",
+      "basis": "Actual capture of the application demo fixture; no real Hermes data. Requested for public README by the maintainer."
+    }
+  ]
+}

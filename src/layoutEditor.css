@@ -1,0 +1,22 @@
+.layout-editor { max-width: 1560px; margin: auto; padding: 18px 22px; }
+.layout-editor header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.layout-editor h1 { font-size: 1.5rem; margin-bottom: 8px; }
+.layout-editor header p:not(.eyebrow), .layout-editor footer { color: #b7a9c9; font-size: .83rem; line-height: 1.6; }
+.layout-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 6px 0 14px; }
+.layout-tools label { display: flex; align-items: center; gap: 7px; }
+.layout-tools [role=status] { font-size: .75rem; color: #b7a9c9; }
+.layout-tools .primary-action { padding: 10px 15px; }
+.layout-stage { position: relative; aspect-ratio: 16 / 9; background: #15101e; border-radius: 8px; box-shadow: 0 0 0 1px #65517d; overflow: hidden; }
+.layout-canvas { position: absolute; inset: 0; }
+.layout-canvas canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.layout-stage .layout-handle { position: absolute; padding: 0; border: 1px solid transparent; border-radius: 5px; background: transparent; cursor: grab; touch-action: none; user-select: none; outline: none; }
+.layout-stage .layout-handle:active { cursor: grabbing; }
+.layout-handle span { display: none; position: absolute; top: 0; left: 50%; transform: translate(-50%, -95%); padding: 3px 8px; background: #20172feb; color: #faf3ff; font: 600 11px ui-monospace, monospace; white-space: nowrap; border: 1px solid #aa85ed; border-radius: 4px; pointer-events: none; }
+.with-guides .layout-handle { border: 1px dashed #c9acec88; }
+.with-guides .layout-handle span { display: block; }
+.with-guides .layout-handle.is-selected, .layout-stage .layout-handle:focus-visible { border: 2px solid #79d5bc; }
+.layout-editor footer { display: flex; gap: 28px; justify-content: space-between; margin-top: 12px; }
+.layout-editor footer p { margin-bottom: 8px; }
+.layout-editor summary { cursor: pointer; color: #d0afff; font-size: .85rem; }
+.layout-editor textarea { width: 100%; height: 200px; margin-top: 10px; background: #21182f; color: #f5effb; border: 1px solid #65517d; }
+@media (max-width: 700px) { .layout-editor { padding: 12px; } .layout-editor header, .layout-editor footer { flex-direction: column; align-items: start; gap: 8px; } }
