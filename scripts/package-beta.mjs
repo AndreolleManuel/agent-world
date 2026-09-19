@@ -3,7 +3,6 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, copyFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve, join } from 'node:path';
-import { validateElf } from './prepare-collectors.mjs';
 import { RELEASE_DOCUMENTS, RELEASE_ROOT_DOCUMENTS, sourceStamp, verifyDocumentLinks } from './release-metadata.mjs';
 import { verifyNoticeBundle } from './verify-notices.mjs';
 
@@ -34,22 +33,13 @@ if (JSON.stringify(info.source) !== JSON.stringify(source)) throw Error('Sources
 execFileSync('/usr/bin/lipo',[binary,'-verify_arch','arm64','x86_64']);
 execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',app]);
 if (readFileSync(binary).includes(Buffer.from(homedir() + '/'))) throw Error('Personal build path remains in the application');
-const resources = join(app,'Contents/Resources/collectors');
-const manifest = JSON.parse(readFileSync(join(resources,'manifest.json')));
-if (manifest.version !== version) throw Error('Bundled collector version mismatch');
-for (const arch of ['x86_64','aarch64']) {
-  const name = `agent-world-collector-linux-${arch}`;
-  const bytes = readFileSync(join(resources,name)); validateElf(bytes,arch);
-  if (createHash('sha256').update(bytes).digest('hex') !== manifest.sha256[name]) throw Error('Bundled collector hash mismatch');
-  if (bytes.includes(Buffer.from(homedir() + '/'))) throw Error('Personal build path remains in a collector');
-}
 mkdirSync('release',{recursive:true});
 const output = mkdtempSync(resolve(root,'release/beta-'));
 const zip = `Agent-World-${version}-mac-universal-UNNOTARIZED.zip`;
 execFileSync('/usr/bin/ditto',['-c','-k','--norsrc','--noextattr','--keepParent',app,join(output,zip)]);
 for (const doc of RELEASE_DOCUMENTS) copyFileSync(join(root,'docs',doc),join(output,doc));
 for (const doc of RELEASE_ROOT_DOCUMENTS) copyFileSync(join(root,doc),join(output,doc));
-writeFileSync(join(output,'BUILD-STATUS.json'),JSON.stringify({version,minimumMacOS,source,macArchitectures:['x86_64','arm64'],collectors:['linux-x86_64','linux-aarch64'],notarized:false,linuxRuntimeValidated:false,publicReleaseApproved:publicBeta,channel:publicBeta?'public-beta':'test-artifact'},null,2)+'\n');
+writeFileSync(join(output,'BUILD-STATUS.json'),JSON.stringify({version,minimumMacOS,source,macArchitectures:['x86_64','arm64'],embeddedRemoteInstaller:false,protocol:2,notarized:false,serverComponentsBundled:false,publicReleaseApproved:publicBeta,channel:publicBeta?'public-beta':'test-artifact'},null,2)+'\n');
 const checksummed = [zip, ...RELEASE_DOCUMENTS, ...RELEASE_ROOT_DOCUMENTS, 'BUILD-STATUS.json'];
 writeFileSync(join(output,'SHA256SUMS'), checksummed.map((file) => `${createHash('sha256').update(readFileSync(join(output,file))).digest('hex')}  ${file}\n`).join(''));
 console.log(output);

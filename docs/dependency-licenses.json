@@ -520,6 +520,12 @@
       "development": true
     },
     {
+      "name": "@standard-schema/spec",
+      "version": "1.1.0",
+      "license": "MIT",
+      "development": true
+    },
+    {
       "name": "@tauri-apps/api",
       "version": "2.11.1",
       "license": "Apache-2.0 OR MIT",
@@ -689,43 +695,43 @@
     },
     {
       "name": "@vitest/expect",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/mocker",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/pretty-format",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/runner",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/snapshot",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/spy",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
     {
       "name": "@vitest/utils",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
@@ -784,12 +790,6 @@
       "development": true
     },
     {
-      "name": "cac",
-      "version": "6.7.14",
-      "license": "MIT",
-      "development": true
-    },
-    {
       "name": "caniuse-lite",
       "version": "1.0.30001810",
       "license": "CC-BY-4.0",
@@ -797,13 +797,7 @@
     },
     {
       "name": "chai",
-      "version": "5.3.3",
-      "license": "MIT",
-      "development": true
-    },
-    {
-      "name": "check-error",
-      "version": "2.1.3",
+      "version": "6.2.2",
       "license": "MIT",
       "development": true
     },
@@ -850,12 +844,6 @@
       "development": true
     },
     {
-      "name": "deep-eql",
-      "version": "5.0.2",
-      "license": "MIT",
-      "development": true
-    },
-    {
       "name": "dequal",
       "version": "2.0.3",
       "license": "MIT",
@@ -893,7 +881,7 @@
     },
     {
       "name": "es-module-lexer",
-      "version": "1.7.0",
+      "version": "2.3.2",
       "license": "MIT",
       "development": true
     },
@@ -1006,12 +994,6 @@
       "development": true
     },
     {
-      "name": "js-tokens",
-      "version": "9.0.1",
-      "license": "MIT",
-      "development": true
-    },
-    {
       "name": "jsdom",
       "version": "26.1.0",
       "license": "MIT",
@@ -1026,12 +1008,6 @@
     {
       "name": "json5",
       "version": "2.2.3",
-      "license": "MIT",
-      "development": true
-    },
-    {
-      "name": "loupe",
-      "version": "3.2.1",
       "license": "MIT",
       "development": true
     },
@@ -1090,6 +1066,12 @@
       "development": true
     },
     {
+      "name": "obug",
+      "version": "2.2.1",
+      "license": "MIT",
+      "development": true
+    },
+    {
       "name": "parse-svg-path",
       "version": "0.2.0",
       "license": "MIT",
@@ -1104,12 +1086,6 @@
     {
       "name": "pathe",
       "version": "2.0.3",
-      "license": "MIT",
-      "development": true
-    },
-    {
-      "name": "pathval",
-      "version": "2.0.1",
       "license": "MIT",
       "development": true
     },
@@ -1235,19 +1211,13 @@
     },
     {
       "name": "std-env",
-      "version": "3.10.0",
+      "version": "4.2.0",
       "license": "MIT",
       "development": true
     },
     {
       "name": "strip-indent",
       "version": "3.0.0",
-      "license": "MIT",
-      "development": true
-    },
-    {
-      "name": "strip-literal",
-      "version": "3.1.0",
       "license": "MIT",
       "development": true
     },
@@ -1271,7 +1241,7 @@
     },
     {
       "name": "tinyexec",
-      "version": "0.3.2",
+      "version": "1.3.1",
       "license": "MIT",
       "development": true
     },
@@ -1282,20 +1252,8 @@
       "development": true
     },
     {
-      "name": "tinypool",
-      "version": "1.1.1",
-      "license": "MIT",
-      "development": true
-    },
-    {
       "name": "tinyrainbow",
-      "version": "2.0.0",
-      "license": "MIT",
-      "development": true
-    },
-    {
-      "name": "tinyspy",
-      "version": "4.0.4",
+      "version": "3.1.1",
       "license": "MIT",
       "development": true
     },
@@ -1336,12 +1294,6 @@
       "development": true
     },
     {
-      "name": "vite-node",
-      "version": "3.2.4",
-      "license": "MIT",
-      "development": true
-    },
-    {
       "name": "vite",
       "version": "7.3.6",
       "license": "MIT",
@@ -1349,7 +1301,7 @@
     },
     {
       "name": "vitest",
-      "version": "3.2.7",
+      "version": "4.1.11",
       "license": "MIT",
       "development": true
     },
@@ -1566,6 +1518,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -1811,6 +1764,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -1847,6 +1801,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -1956,6 +1911,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -1983,6 +1939,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -2420,6 +2377,7 @@
       "license": "MIT",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -2809,6 +2767,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -2972,6 +2931,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3065,6 +3025,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3174,6 +3135,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3528,6 +3490,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3592,6 +3555,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3611,6 +3575,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3709,6 +3674,15 @@
       "name": "reqwest",
       "version": "0.13.4",
       "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rfd",
+      "version": "0.16.0",
+      "license": "MIT",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -3840,6 +3814,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3859,6 +3834,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3869,6 +3845,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3933,6 +3910,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -3969,6 +3947,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -4125,6 +4104,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -4202,6 +4182,33 @@
     },
     {
       "name": "tauri-macros",
+      "version": "2.6.3",
+      "license": "Apache-2.0 OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "tauri-plugin-dialog",
+      "version": "2.7.3",
+      "license": "Apache-2.0 OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "tauri-plugin-fs",
+      "version": "2.5.2",
+      "license": "Apache-2.0 OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "tauri-plugin",
       "version": "2.6.3",
       "license": "Apache-2.0 OR MIT",
       "origin": "registry",
@@ -4318,6 +4325,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -4328,6 +4336,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -4338,6 +4347,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -4572,6 +4582,7 @@
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -4627,6 +4638,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     },
@@ -4691,6 +4703,7 @@
       "license": "MIT/Apache-2.0",
       "origin": "registry",
       "components": [
+        "collector",
         "src-tauri"
       ]
     },
@@ -4938,6 +4951,15 @@
       ]
     },
     {
+      "name": "windows_aarch64_gnullvm",
+      "version": "0.53.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "windows_aarch64_msvc",
       "version": "0.42.2",
       "license": "MIT OR Apache-2.0",
@@ -4956,6 +4978,15 @@
       ]
     },
     {
+      "name": "windows_aarch64_msvc",
+      "version": "0.53.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "windows_i686_gnu",
       "version": "0.42.2",
       "license": "MIT OR Apache-2.0",
@@ -4967,6 +4998,15 @@
     {
       "name": "windows_i686_gnu",
       "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows_i686_gnu",
+      "version": "0.53.1",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
@@ -4983,6 +5023,15 @@
       ]
     },
     {
+      "name": "windows_i686_gnullvm",
+      "version": "0.53.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "windows_i686_msvc",
       "version": "0.42.2",
       "license": "MIT OR Apache-2.0",
@@ -4994,6 +5043,15 @@
     {
       "name": "windows_i686_msvc",
       "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows_i686_msvc",
+      "version": "0.53.1",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
@@ -5019,6 +5077,15 @@
       ]
     },
     {
+      "name": "windows_x86_64_gnu",
+      "version": "0.53.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "windows_x86_64_gnullvm",
       "version": "0.42.2",
       "license": "MIT OR Apache-2.0",
@@ -5037,6 +5104,15 @@
       ]
     },
     {
+      "name": "windows_x86_64_gnullvm",
+      "version": "0.53.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "windows_x86_64_msvc",
       "version": "0.42.2",
       "license": "MIT OR Apache-2.0",
@@ -5048,6 +5124,15 @@
     {
       "name": "windows_x86_64_msvc",
       "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows_x86_64_msvc",
+      "version": "0.53.1",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
@@ -5192,6 +5277,15 @@
     },
     {
       "name": "windows-sys",
+      "version": "0.60.2",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows-sys",
       "version": "0.61.2",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
@@ -5212,6 +5306,15 @@
     {
       "name": "windows-targets",
       "version": "0.52.6",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows-targets",
+      "version": "0.53.5",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
@@ -5405,6 +5508,7 @@
       "origin": "registry",
       "components": [
         "collector",
+        "reader",
         "src-tauri"
       ]
     }

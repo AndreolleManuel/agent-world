@@ -1,8 +1,13 @@
 {
   "reviewed": true,
-  "reviewedAt": "2026-09-06",
-  "noticeSha256": "0873a09aecd3bafc6bc1a533a12cd00e51e4d770ed9a552a872f1d0d3424cbf2",
-  "scope": ["JavaScript runtime and bundled build helpers", "Rust app and collectors", "SQLite", "embedded third-party notices"],
-  "evidence": "277 notice entries cover locked normal/build dependencies for both macOS app targets and both Linux musl collectors, plus JavaScript runtime and bundler helpers. Five unchanged MPL source archives match Cargo.lock checksums. Full notices and source archives accompany the app and source distribution. Missing packaged texts are supplemented with commit-pinned upstream texts; selectors receives standard MPL 2.0 text and its exact original source archive.",
+  "reviewedAt": "2026-09-19",
+  "noticeSha256": "739018d0abeb081af62de635930d453a8328d3992645e5d3b84421f91e63e2db",
+  "scope": [
+    "JavaScript runtime and bundled build helpers",
+    "Rust macOS app, Linux exporters and readers",
+    "SQLite",
+    "embedded third-party notices"
+  ],
+  "evidence": "281 complete notice entries cover the locked normal/build graphs. Four additions reviewed: rfd (MIT), tauri-plugin-dialog, tauri-plugin-fs and tauri-plugin (Apache-2.0 OR MIT). Tauri plugin texts retrieved from the exact crate VCS commit. Five unchanged MPL source archives verified against Cargo.lock. No missing notices.",
   "note": "Redistribution preparation review, not independent legal certification. Original third-party licenses remain applicable. Refresh and review after dependency or target changes. Development-only and unsupported-platform metadata remains in dependency-licenses.json, not all such components ship in the app."
 }

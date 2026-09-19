@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AgentHeartbeatDto } from '../heartbeat';
 import PixiWorld from './PixiWorld';
 import type { WorldRenderer } from './renderer';
+import { placementFor } from './placement';
 
 vi.mock('./renderer', () => ({
   PixiWorldRenderer: class {
@@ -49,6 +50,29 @@ afterEach(() => {
 });
 
 describe('PixiWorld lifecycle', () => {
+  it('renders an idle agent at its retained work seat without passing a false working status to Pixi', async () => {
+    const renderer: WorldRenderer = {
+      start: vi.fn().mockResolvedValue(undefined), sync: vi.fn(), destroy: vi.fn(),
+    };
+    const idle = fixture('atlas', 'available');
+    const desk = placementFor('atlas', 'live_run', 'control-room', 0);
+    render(<PixiWorld agents={[idle]} motions={{ atlas: {
+      origin: desk.start, destination: desk.destination, moving: true,
+      slotIndex: 0, placementPhase: 'live_run',
+    } }} selectedId={null} reducedMotion={false} onSelect={vi.fn()} createRenderer={() => renderer} />);
+    await waitFor(() => expect(renderer.sync).toHaveBeenCalled());
+    const model = vi.mocked(renderer.sync).mock.calls.at(-1)![0].agents[0];
+    expect(model.agent).toBe(idle);
+    expect(model.agent.task_phase).toBe('available');
+    expect(model.interaction).toBe('typing-at-desk');
+    expect(model.motion.destination).toEqual(desk.destination);
+    expect(model.hidden).toBe(false);
+    const control = screen.getByTestId('pixi-agent-control');
+    expect(control).toHaveAttribute('data-state', 'available');
+    expect(control).toHaveAttribute('data-zone', 'console');
+    expect(control).toHaveTextContent('Disponible');
+  });
+
   it('emits a sanitized native canvas probe after 25 seconds when explicitly enabled', async () => {
     vi.stubEnv('VITE_CANVAS_PROBE', '1');
     vi.useFakeTimers();

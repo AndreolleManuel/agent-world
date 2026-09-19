@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { isPublicSource } from './prepare-public-source.mjs';
 
 test('public snapshot keeps source/build inputs and community documentation', () => {
-  for (const file of ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/PRIVACY.md', 'docs/dependency-licenses.json', 'src/Startup.tsx', 'src/assets/fixture.png', 'src-tauri/tauri.beta.conf.json', 'src-tauri/src/remote_install.sh', 'src-tauri/Cargo.lock', 'collector/tests/protocol.rs', '.github/workflows/beta.yml']) assert.equal(isPublicSource(file), true, file);
+  for (const file of ['README.md', 'LICENSE', 'CONTRIBUTING.md', 'SECURITY.md', 'docs/PRIVACY.md', 'docs/dependency-licenses.json', 'src/Startup.tsx', 'src/assets/fixture.png', 'src-tauri/tauri.beta.conf.json', 'src-tauri/src/local_helper.rs', 'reader/src/main.rs', 'scripts/install-secure-vps.py', 'docs/PROTOCOL.md', 'src-tauri/Cargo.lock', 'collector/tests/protocol.rs', '.github/workflows/beta.yml']) assert.equal(isPublicSource(file), true, file);
 });
 
 test('public snapshot excludes private history, internal reports, builds and settings', () => {

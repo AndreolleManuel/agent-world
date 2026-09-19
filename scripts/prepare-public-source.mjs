@@ -6,20 +6,20 @@ import { fileURLToPath } from 'node:url';
 import { findings } from './audit-public.mjs';
 
 const ROOT_FILES = new Set(['.gitignore', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'package.json', 'package-lock.json', 'index.html', 'tsconfig.json', 'vite.config.ts']);
-const DOCS = new Set(['INSTALLATION.md', 'TEST-BETA.md', 'BETA-MAC.md', 'VPS.md', 'SECURITY.md', 'PRIVACY.md', 'PUBLICATION.md', 'asset-rights.json', 'dependency-rights.json', 'dependency-licenses.json']);
+const DOCS = new Set(['INSTALLATION.md', 'TEST-BETA.md', 'BETA-MAC.md', 'VPS.md', 'SECURITY.md', 'PRIVACY.md', 'PUBLICATION.md', 'PROTOCOL.md', 'SITE-PRESENTATION.md', 'VALIDATION-0.2.0.md', 'asset-rights.json', 'dependency-rights.json', 'dependency-licenses.json']);
 
 export function isPublicSource(file) {
   if (file.includes('\\') || file.split('/').some((part) => part === '..' || part === '.' || !part)) return false;
   if (ROOT_FILES.has(file)) return true;
   if (file.startsWith('docs/')) return DOCS.has(file.slice(5)) || file === 'docs/screenshots/agent-world-demo.png' || /^docs\/third-party\/(?:THIRD-PARTY-LICENSES\.txt|manifest\.json|upstream\/[\w.-]+\.json|mpl\/[\w.-]+\.crate)$/.test(file);
-  if (file === '.github/workflows/beta.yml') return true;
+  if (['.github/workflows/beta.yml', '.github/workflows/checks.yml'].includes(file)) return true;
   if (/^src\/.+\.(?:tsx?|css|png)$/.test(file)) return true;
-  if (/^scripts\/[^/]+\.(?:mjs|sh|swift)$/.test(file)) return true;
+  if (/^scripts\/[^/]+\.(?:mjs|sh|swift|py)$/.test(file)) return true;
   if (/^src-tauri\/(?:Cargo\.(?:toml|lock)|build\.rs|tauri\.(?:beta\.)?conf\.json)$/.test(file)) return true;
   if (/^src-tauri\/(?:src|tests|examples)\/[^/]+\.(?:rs|sh)$/.test(file)) return true;
   if (/^src-tauri\/capabilities\/[^/]+\.json$/.test(file)) return true;
   if (/^src-tauri\/icons\/[^/]+\.(?:svg|icns|png)$/.test(file)) return true;
-  return /^collector\/(?:Cargo\.(?:toml|lock)|(?:src|tests)\/[^/]+\.rs)$/.test(file);
+  return /^(?:collector|reader)\/(?:Cargo\.(?:toml|lock)|(?:src|tests)\/[^/]+\.rs)$/.test(file);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

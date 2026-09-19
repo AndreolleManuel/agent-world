@@ -62,6 +62,7 @@ export function releasePackages(metadata) {
 const targets = {
   'src-tauri': ['aarch64-apple-darwin', 'x86_64-apple-darwin'],
   collector: ['aarch64-unknown-linux-musl', 'x86_64-unknown-linux-musl'],
+  reader: ['aarch64-unknown-linux-musl', 'x86_64-unknown-linux-musl'],
 };
 
 async function assemble(root, allowFetch) {
@@ -70,7 +71,7 @@ async function assemble(root, allowFetch) {
   mkdirSync(upstream, { recursive: true });
   const records = [];
   const missing = [];
-  const chunks = ['Agent World — third-party license texts\n\nThese are verbatim upstream notices, not relicensed as Agent World.\nRust entries cover normal and build dependencies for the universal macOS app\nand both static Linux collectors. Development-only dependencies are excluded.\nExact unchanged MPL source crates are distributed in licenses/mpl inside the app,\nand docs/third-party/mpl in the source repository, under their original MPL terms.\n'];
+  const chunks = ['Agent World — third-party license texts\n\nThese are verbatim upstream notices, not relicensed as Agent World.\nRust entries cover normal and build dependencies for the universal macOS app\nand both static Linux exporters and readers. Development-only dependencies are excluded.\nExact unchanged MPL source crates are distributed in licenses/mpl inside the app,\nand docs/third-party/mpl in the source repository, under their original MPL terms.\n'];
   const append = (ecosystem, name, version, license, docs, extra = {}) => {
     if (!docs.length) { missing.push(`${ecosystem}:${name}@${version}`); return; }
     chunks.push(`\n========== ${ecosystem}: ${name}@${version} (${license}) ==========\n`);
@@ -124,7 +125,7 @@ async function assemble(root, allowFetch) {
           if (fetched.has(base)) docs = fetched.get(base);
           else {
             // A shared repo-root license is used only for crates declaring that license.
-            for (const name of ['LICENSE.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-MIT.txt', 'LICENSE.txt', 'LICENSE-APACHE', 'COPYING']) {
+            for (const name of ['LICENSE.md', 'LICENSE', 'LICENSE-MIT', 'LICENSE-MIT.txt', 'LICENSE.txt', 'LICENSE-APACHE', 'LICENSE_MIT', 'LICENSE_APACHE-2.0', 'COPYING']) {
               const url = `${base}/${name}`;
               try {
                 const response = await fetch(url, { signal: AbortSignal.timeout(15000), redirect: 'error' });

@@ -1,8 +1,10 @@
+import { own } from './records';
 export interface Preferences {
   version: 1;
   configured: boolean;
   enabledAgents: string[];
   avatars: Record<string, number>;
+  aliases?: Record<string, string>;
   root?: string;
   knownAgents?: string[];
 }
@@ -30,6 +32,7 @@ export function readPreferences(): Preferences {
       root: typeof raw.root === 'string' ? raw.root : undefined,
       knownAgents: Array.isArray(raw.knownAgents) ? raw.knownAgents.filter((id: unknown) => typeof id === 'string') : undefined,
       enabledAgents: Array.isArray(raw.enabledAgents) ? raw.enabledAgents.filter((id: unknown) => typeof id === 'string') : [],
+      aliases: Object.fromEntries(Object.entries(raw.aliases ?? {}).filter(([k,v]) => k.length <= 256 && typeof v === 'string' && v.length <= 64).slice(0,256)) as Record<string, string>,
       avatars: Object.fromEntries(Object.entries(raw.avatars ?? {}).filter(([, v]) => Number.isInteger(v) && Number(v) >= 0 && Number(v) < 13)) as Record<string, number>,
     };
   } catch { return defaults; }
@@ -39,9 +42,9 @@ export function savePreferences(value: Preferences): boolean {
 }
 export function persistentAvatar(agentId: string, fallback: number): number {
   const preferences = readPreferences();
-  const existing = preferences.avatars[agentId];
+  const existing = own(preferences.avatars, agentId);
   if (existing !== undefined) return existing;
-  preferences.avatars[agentId] = fallback;
+  preferences.avatars = { ...preferences.avatars, [agentId]: fallback };
   savePreferences(preferences);
   return fallback;
 }
@@ -51,3 +54,10 @@ export const AVATAR_SHEETS = [
   new URL('./assets/am-labs-human-variants-16bit-v2.png', import.meta.url).href,
   new URL('./assets/am-labs-human-variants-16bit-v3.png', import.meta.url).href,
 ];
+
+export function reconcileAvatars(ids: readonly string[], previous: Record<string, number> = {}): Record<string, number> {
+  return Object.fromEntries(ids.slice(0, 256).map((id, index) => {
+    const avatar = own(previous, id);
+    return [id, Number.isInteger(avatar) && avatar! >= 0 && avatar! < 13 ? avatar! : (index % 12) + 1];
+  }));
+}

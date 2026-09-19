@@ -328,6 +328,29 @@ describe('PixiWorldRenderer', () => {
     });
   });
 
+  it('finishes the walk to a retained desk when work ends before arrival', async () => {
+    let now = 1000;
+    const renderer = new PixiWorldRenderer(document.createElement('canvas'), vi.fn(), () => now);
+    const arrived = vi.fn(); renderer.setMotionListener(arrived);
+    const model = { agent: fixture('short-task'), interaction: 'typing-at-desk' as const, selected: false,
+      motion: { origin: { x: 52, y: 89 }, destination: WORKSTATION_SLOTS[0].point, moving: true } };
+    renderer.sync({ reducedMotion: false, agents: [model] }); await renderer.start();
+    now += 400; pixi.FakeApplication.instances.at(-1)?.ticker.update();
+    const node = agentNode('short-task');
+    const before = { x: node.position.x, y: node.position.y };
+    renderer.sync({ reducedMotion: false, agents: [{ ...model,
+      agent: { ...model.agent, task_phase: 'available' },
+      motion: { ...model.motion, origin: model.motion.destination, moving: false, placementPhase: 'live_run' },
+    }] });
+    expect({ x: node.position.x, y: node.position.y }).toEqual(before);
+    now += movementDuration(navigate(model.motion.origin, model.motion.destination));
+    pixi.FakeApplication.instances.at(-1)?.ticker.update();
+    const target = projectWorldPoint(model.motion.destination);
+    expect(node.position).toMatchObject({ x: Math.round(target.x), y: Math.round(target.y) });
+    expect(arrived).toHaveBeenCalledWith('short-task', model.motion.destination, false);
+    renderer.destroy();
+  });
+
   it('queues simultaneous transfers and starts the next only after arrival', async () => {
     let now = 1000;
     const renderer = new PixiWorldRenderer(document.createElement('canvas'), vi.fn(), () => now);
@@ -343,6 +366,57 @@ describe('PixiWorldRenderer', () => {
     now += 1; pixi.FakeApplication.instances.at(-1)?.ticker.update();
     now += 10000; pixi.FakeApplication.instances.at(-1)?.ticker.update();
     expect(arrived).toHaveBeenCalledWith('queue-b', b.motion.destination, false);
+    renderer.destroy();
+  });
+
+  it.each([false, true])('admits arrivals sharing the doorway across refreshes (returning from overflow: %s)', async (wasHidden) => {
+    let now = 1000;
+    const renderer = new PixiWorldRenderer(document.createElement('canvas'), vi.fn(), () => now);
+    const arrived = vi.fn(); renderer.setMotionListener(arrived);
+    await renderer.start();
+    const models = WORKSTATION_SLOTS.slice(0, 3).map((slot, i) => ({
+      agent: fixture(`arrival-${i}`), selected: false, interaction: slot.interaction,
+      motion: { origin: { x: 52, y: 89 }, destination: slot.point, moving: true },
+    }));
+    renderer.sync({ reducedMotion: false, agents: wasHidden ? models.map((m) => ({ ...m, hidden: true })) : [] });
+    renderer.sync({ reducedMotion: false, agents: models });
+    expect(models.filter((m) => agentNode(m.agent.agent_id).visible)).toHaveLength(1);
+    // Polling reports the assigned destination before the renderer has arrived.
+    renderer.sync({ reducedMotion: false, agents: models.map((m) => ({ ...m,
+      motion: { ...m.motion, origin: m.motion.destination, moving: false },
+    })) });
+    expect(models.filter((m) => agentNode(m.agent.agent_id).visible)).toHaveLength(1);
+    for (const model of models) {
+      now += 1; pixi.FakeApplication.instances.at(-1)?.ticker.update();
+      now += 10000; pixi.FakeApplication.instances.at(-1)?.ticker.update();
+      expect(arrived).toHaveBeenCalledWith(model.agent.agent_id, model.motion.destination, false);
+    }
+    expect(arrived.mock.calls.some(([, , blocked]) => blocked)).toBe(false);
+    expect(models.every((m) => agentNode(m.agent.agent_id).visible)).toBe(true);
+    renderer.destroy();
+  });
+
+  it('keeps arrivals outside an occupied entrance and admits them after its occupant leaves', async () => {
+    let now = 1000;
+    const renderer = new PixiWorldRenderer(document.createElement('canvas'), vi.fn(), () => now);
+    const arrived = vi.fn(); renderer.setMotionListener(arrived);
+    const entrance = { x: 52, y: 89 };
+    const resident = { agent: fixture('resident'), selected: false,
+      motion: { origin: entrance, destination: entrance, moving: false } };
+    renderer.sync({ reducedMotion: false, agents: [resident] }); await renderer.start();
+    const newcomer = { agent: fixture('newcomer'), selected: false,
+      motion: { origin: entrance, destination: WORKSTATION_SLOTS[1].point, moving: true } };
+    renderer.sync({ reducedMotion: false, agents: [resident, newcomer] });
+    expect(agentNode('newcomer').visible).toBe(false);
+    renderer.sync({ reducedMotion: false, agents: [{ ...resident,
+      motion: { ...resident.motion, destination: WORKSTATION_SLOTS[0].point, moving: true },
+    }, newcomer] });
+    for (let i = 0; i < 4; i++) {
+      now += 10000; pixi.FakeApplication.instances.at(-1)?.ticker.update();
+    }
+    expect(arrived).toHaveBeenCalledWith('resident', WORKSTATION_SLOTS[0].point, false);
+    expect(arrived).toHaveBeenLastCalledWith('newcomer', newcomer.motion.destination, false);
+    expect(agentNode('newcomer').visible).toBe(true);
     renderer.destroy();
   });
   it('finishes an ongoing transfer when reduced motion is enabled', async () => {
@@ -587,4 +661,35 @@ describe('PixiWorldRenderer', () => {
       y: Math.round(expected.y),
     });
   });
+  it('keeps a resting-only room animated, preserves chatter across polls and clears it when paused', async () => {
+    let now = 0;
+    const renderer = new PixiWorldRenderer(document.createElement('canvas'), vi.fn(), () => now);
+    await renderer.start();
+    const model = { agent: { ...fixture('daydream'), task_phase: 'available' }, selected: false,
+      interaction: 'sitting-on-sofa' as const,
+      motion: { origin: { x: 80, y: 60 }, destination: { x: 80, y: 60 }, moving: false } };
+    const snapshot = { reducedMotion: false, agents: [model] };
+    renderer.sync(snapshot);
+    const app = pixi.FakeApplication.instances.at(-1)!;
+    expect(app.ticker.started).toBe(true);
+    now = 1600; app.ticker.update();
+    const chatter = app.stage.children.find(({ label }) => label === 'agent-chatter:daydream')!;
+    expect(chatter.visible).toBe(true);
+    const text = descendants(chatter).map((child) => child.text).join('');
+    now = 2400; renderer.sync(snapshot);
+    expect(chatter.visible).toBe(true);
+    expect(descendants(chatter).map((child) => child.text).join('')).toBe(text);
+    renderer.sync({ ...snapshot, paused: true });
+    expect(chatter.visible).toBe(false);
+    expect(app.ticker.started).toBe(false);
+    renderer.sync({ ...snapshot, reducedMotion: true });
+    expect(chatter.visible).toBe(false);
+    expect(app.ticker.started).toBe(false);
+    renderer.sync({ ...snapshot, agents: [{ ...model, agent: { ...model.agent, task_phase: 'telemetry_unavailable' } }] });
+    now += 1000; app.ticker.update();
+    expect(chatter.visible).toBe(false);
+    expect(app.ticker.started).toBe(false);
+    renderer.destroy();
+  });
+
 });

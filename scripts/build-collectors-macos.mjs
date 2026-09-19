@@ -26,5 +26,7 @@ for (const arch of ['x86_64','aarch64']) {
     CARGO_ENCODED_RUSTFLAGS:['-C','target-feature=+crt-static','-C','strip=symbols',`--remap-path-prefix=${homedir()}=/build-user`,`--remap-path-prefix=${root}=/agent-world`].join('\x1f'), CARGO_TARGET_DIR:join(root,'collector/target')};
   execFileSync(cargo,['build','--offline','--locked','--release','--manifest-path',join(root,'collector/Cargo.toml'),'--target',target],{env,stdio:'inherit',cwd:root});
   copyFileSync(join(root,`collector/target/${target}/release/agent-world-collector`),join(root,`release/collectors/agent-world-collector-linux-${arch}`));
+  execFileSync(cargo,['build','--offline','--locked','--release','--manifest-path',join(root,'reader/Cargo.toml'),'--target',target],{env:{...env,CARGO_TARGET_DIR:join(root,'reader/target')},stdio:'inherit',cwd:root});
+  copyFileSync(join(root,`reader/target/${target}/release/agent-world-reader`),join(root,`release/collectors/agent-world-reader-linux-${arch}`));
 }
 console.log('Both Linux architectures compiled. Run the Linux test workflow before declaring runtime compatibility.');

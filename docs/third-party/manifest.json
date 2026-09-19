@@ -8,9 +8,13 @@
     "collector": [
       "aarch64-unknown-linux-musl",
       "x86_64-unknown-linux-musl"
+    ],
+    "reader": [
+      "aarch64-unknown-linux-musl",
+      "x86_64-unknown-linux-musl"
     ]
   },
-  "noticeSha256": "0873a09aecd3bafc6bc1a533a12cd00e51e4d770ed9a552a872f1d0d3424cbf2",
+  "noticeSha256": "739018d0abeb081af62de635930d453a8328d3992645e5d3b84421f91e63e2db",
   "missing": [],
   "mplSources": [
     "cssparser-macros-0.6.1.crate",
@@ -2650,6 +2654,18 @@
     },
     {
       "ecosystem": "cargo",
+      "name": "rfd",
+      "version": "0.16.0",
+      "license": "MIT",
+      "documents": [
+        {
+          "source": "LICENSE",
+          "sha256": "65fc947f4bac882a2cd104ef73c246b1b037059df9f2b3a58b7f77f0b9e56071"
+        }
+      ]
+    },
+    {
+      "ecosystem": "cargo",
       "name": "rusqlite",
       "version": "0.40.2",
       "license": "MIT",
@@ -3279,6 +3295,62 @@
         {
           "source": "LICENSE_MIT",
           "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
+        }
+      ]
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tauri-plugin-dialog",
+      "version": "2.7.3",
+      "license": "Apache-2.0 OR MIT",
+      "documents": [
+        {
+          "source": "LICENSE.spdx",
+          "sha256": "eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef"
+        },
+        {
+          "source": "LICENSE_APACHE-2.0",
+          "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9"
+        },
+        {
+          "source": "LICENSE_MIT",
+          "sha256": "89ff9689dcf9dd53968785d05a26f7898bb169dbfcada8d032b3e68cf0d55607"
+        }
+      ]
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tauri-plugin-fs",
+      "version": "2.5.2",
+      "license": "Apache-2.0 OR MIT",
+      "documents": [
+        {
+          "source": "LICENSE.spdx",
+          "sha256": "eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef"
+        },
+        {
+          "source": "LICENSE_APACHE-2.0",
+          "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9"
+        },
+        {
+          "source": "LICENSE_MIT",
+          "sha256": "89ff9689dcf9dd53968785d05a26f7898bb169dbfcada8d032b3e68cf0d55607"
+        }
+      ]
+    },
+    {
+      "ecosystem": "cargo",
+      "name": "tauri-plugin",
+      "version": "2.6.3",
+      "license": "Apache-2.0 OR MIT",
+      "documents": [
+        {
+          "source": "https://raw.githubusercontent.com/tauri-apps/tauri/6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a/LICENSE_MIT",
+          "sha256": "9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d"
+        },
+        {
+          "source": "https://raw.githubusercontent.com/tauri-apps/tauri/6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a/LICENSE_APACHE-2.0",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
         }
       ]
     },

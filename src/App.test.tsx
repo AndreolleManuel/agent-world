@@ -204,6 +204,66 @@ describe('multi-agent control room', () => {
     }
   });
 
+  it('finishes the trip to the desk, waits through short idle gaps, and leaves 90 seconds after renewed activity', async () => {
+    vi.useFakeTimers();
+    let phase: FixturePhase = 'available';
+    const load = async () => ({ agents: [agent('atlas', phase), agent('rest')], kanban: { tasks: [], partial: false } });
+    const control = () => screen.getByRole('button', { name: 'Opérateur Operator atlas' });
+    const destination = () => [control().getAttribute('data-destination-x'), control().getAttribute('data-destination-y')];
+    try {
+      render(<App loadWorldSnapshot={load} />);
+      await act(async () => {});
+      expect(control()).toHaveAttribute('data-zone', 'rest');
+      const sofa = destination();
+      phase = 'live_run';
+      await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+      const desk = destination();
+      expect(desk).not.toEqual(sofa);
+      expect(control()).toHaveAttribute('data-moving', 'true');
+      phase = 'available';
+      await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+      expect(control()).toHaveAttribute('data-state', 'available');
+      expect(control()).toHaveAttribute('data-zone', 'console');
+      expect(destination()).toEqual(desk);
+      expect(screen.getByRole('button', { name: '0 actifs' })).toBeInTheDocument();
+      fireEvent.click(control());
+      expect(within(screen.getByTestId('evidence-panel')).getByText('Disponible')).toBeInTheDocument();
+
+      await act(async () => { await vi.advanceTimersByTimeAsync(25_000); });
+      phase = 'live_session';
+      await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+      expect(destination()).toEqual(desk);
+      expect(screen.getByRole('button', { name: '1 actifs' })).toBeInTheDocument();
+      phase = 'available';
+      await act(async () => { await vi.advanceTimersByTimeAsync(89_999); });
+      expect(destination()).toEqual(desk);
+      expect(screen.getByRole('button', { name: '0 actifs' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Opérateur Operator rest' })).toHaveAttribute('data-zone', 'rest');
+      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+      expect(control()).toHaveAttribute('data-state', 'available');
+      expect(control()).toHaveAttribute('data-zone', 'rest');
+      expect(control()).toHaveAttribute('data-moving', 'true');
+      expect(destination()).toEqual(sofa);
+    } finally { cleanup(); vi.useRealTimers(); }
+  });
+
+  it.each(['blocked', 'telemetry_unavailable'] as const)('shows %s immediately and cancels the desk grace period', async (nextPhase) => {
+    let phase: FixturePhase = 'live_run';
+    const load = async () => ({ agents: [agent('atlas', phase)], kanban: { tasks: [], partial: false } });
+    render(<App loadWorldSnapshot={load} />);
+    const control = await screen.findByRole('button', { name: 'Opérateur Operator atlas' });
+    phase = 'available';
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Actualiser' })); });
+    expect(control).toHaveAttribute('data-zone', 'console');
+    phase = nextPhase;
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Actualiser' })); });
+    expect(control).toHaveAttribute('data-state', nextPhase);
+    expect(screen.getByRole('button', { name: '0 actifs' })).toBeInTheDocument();
+    phase = 'available';
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Actualiser' })); });
+    expect(control).toHaveAttribute('data-zone', 'rest');
+  });
+
   it('keeps existing agents in place when a peer joins the same phase', async () => {
     const loadAgentHeartbeats = vi.fn()
       .mockResolvedValueOnce([
@@ -477,4 +537,43 @@ describe('multi-agent control room', () => {
     expect(await screen.findByRole('button', { name: /opérateur operator unit-recovered/i })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+  it('keeps automatic polling quiet and joins an in-flight read on manual refresh', async () => {
+    vi.useFakeTimers();
+    let resolveRead!: (agents: AgentHeartbeatDto[]) => void;
+    const load = vi.fn(() => new Promise<AgentHeartbeatDto[]>((resolve) => { resolveRead = resolve; }));
+    try {
+      render(<App loadAgentHeartbeats={load} loadKanban={async () => ({ tasks: [], partial: false })} />);
+      const button = screen.getByRole('button', { name: 'Actualiser' });
+      expect(button).toBeEnabled();
+      expect(button).toHaveAttribute('aria-busy', 'false');
+      await act(async () => { resolveRead([agent('rest')]); });
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+      expect(load).toHaveBeenCalledTimes(2);
+      expect(button).toBeEnabled();
+      expect(button).toHaveAttribute('aria-busy', 'false');
+      fireEvent.click(button);
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('aria-busy', 'true');
+      expect(load).toHaveBeenCalledTimes(2);
+      await act(async () => { resolveRead([agent('rest')]); });
+      expect(button).toBeEnabled();
+      expect(button).toHaveAttribute('aria-busy', 'false');
+      fireEvent.click(button);
+      expect(load).toHaveBeenCalledTimes(3);
+      await act(async () => { resolveRead([]); });
+      expect(button).toBeEnabled();
+    } finally { cleanup(); vi.useRealTimers(); }
+  });
+
+  it('expands the world without losing supervision and exits with Escape', async () => {
+    render(<App loadAgentHeartbeats={async () => [agent('rest')]}
+      loadKanban={async () => ({ tasks: [], partial: false })} />);
+    await screen.findByRole('button', { name: 'Opérateur Operator rest' });
+    fireEvent.click(screen.getByRole('button', { name: 'Agrandir la scène' }));
+    expect(screen.getByRole('main')).toHaveClass('scene-expanded');
+    expect(screen.getByRole('button', { name: 'Équipe · 1' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('main')).not.toHaveClass('scene-expanded');
+  });
+
 });

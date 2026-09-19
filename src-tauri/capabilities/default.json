@@ -1,7 +1,11 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal capability for the Pixel Ops main window; no filesystem, shell, HTTP, or process permissions.",
+  "description": "Explicit local viewer commands. Source changes require independent native consent; no installer, shell, filesystem or remote-origin permissions.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": [
+    "allow-read-world-snapshot", "allow-detect-hermes", "allow-configure-hermes",
+    "allow-detect-remote-hermes", "allow-configure-remote-hermes", "allow-configured-remote",
+    "allow-recover-configuration", "allow-open-company-site"
+  ]
 }

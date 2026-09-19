@@ -1,17 +1,7 @@
-# Signaler un problème de sécurité
+# Signaler une vulnérabilité
 
-Agent World lit des métadonnées Hermes et peut se connecter à un VPS par SSH. Pour comprendre les accès, les limites et les données conservées, consultez [Données et confidentialité](docs/PRIVACY.md) et le [modèle de sécurité technique](docs/SECURITY.md).
+Les changements 0.2.0 durcissent le modèle d'accès ; les archives 0.1.x ne bénéficient pas de ces protections. Aucun candidat n'est une certification de sécurité. Voir [le modèle](docs/SECURITY.md) et [la validation](docs/VALIDATION-0.2.0.md).
 
-## Signalement confidentiel
+Utiliser le signalement privé GitHub du dépôt s'il est activé. À défaut, prendre contact avec le mainteneur via [AM Labs](https://amlabs.dev) en indiquant seulement qu'un échange privé est nécessaire. Ne pas publier dans une issue des secrets, clés, conversations, bases privées ou procédure exploitable contre un serveur réel. Aucun délai de réponse garanti n'est annoncé.
 
-Ne publiez pas une vulnérabilité exploitable, une clé, un profil Hermes réel, une base ou une capture sensible dans une issue publique.
-
-Le signalement privé GitHub a été activé et vérifié le 6 septembre 2026. Utilisez [Report a vulnerability](https://github.com/AndreolleManuel/agent-world/security/advisories/new), également accessible par **Security → Advisories**. Si cette option devient indisponible, demandez un canal confidentiel au mainteneur sans divulguer les détails techniques.
-
-Incluez la version d'Agent World, le système, les conditions de reproduction et un exemple utilisant des données fictives. Ne testez que des systèmes pour lesquels vous avez une autorisation. Évitez toute collecte de données d'autres utilisateurs.
-
-## Versions et limites
-
-La version 0.1.0 est une bêta de test ; aucune version n'est annoncée comme auditée indépendamment ou certifiée. Aucun délai contractuel de prise en charge ni programme de prime n'est promis. Les notes de release précisent les limites et les correctifs disponibles.
-
-L'application actuelle est signée ad-hoc, non notarisée par Apple. Téléchargez uniquement les paquets annoncés sur le dépôt officiel et suivez le [guide d'installation](docs/INSTALLATION.md). Ne désactivez pas globalement les protections de macOS. Un checksum permet de détecter une corruption, pas d'authentifier à lui seul un éditeur ou de garantir l'absence de vulnérabilité.
+Fournir version/révision, OS, surface affectée, impact, étapes sur données synthétiques et éventuel correctif. Éviter les scans de systèmes tiers. Si une clé viewer est compromise, la révoquer côté serveur immédiatement ; désinstaller l'app ne suffit pas.

@@ -1,87 +1,78 @@
-# Agent World — connexion à Hermes sur un VPS
+# VPS — installation administrative du protocole 2
 
-## État réel de cette version
+Pour développeurs et administrateurs Linux. La préparation est distincte de l’app Mac. Ne jamais donner au viewer une clé root/Hermes générale. Référence testée : Debian 13 arm64, OpenSSH et systemd. Les autres distributions doivent valider les protections avant toute annonce de compatibilité.
 
-L’app macOS propose **Sur ce Mac** et **Sur un VPS**. Le mode VPS exécute un collecteur sur le serveur via SSH, puis affiche les mêmes agents et preuves dans le laboratoire. Il ne pilote pas Hermes. Aucun serveur AM Labs ni port HTTP public n’intervient.
+## Architecture
 
-Le collecteur est un programme Rust autonome sans Tauri, navigateur, serveur web, service systemd ou dépendance à l’exécutable sqlite3. Il réutilise les fichiers source du lecteur de l’app et son SQLite embarqué. La compatibilité des données reste celle des versions/schémas Hermes reconnus par ce lecteur, pas une promesse sur toutes les versions d’Hermes.
+Un exporteur sans root lit les profils explicitement publiés dans un espace de fichiers isolé par systemd, sans réseau, et écrit un snapshot minimal. Un compte `aw-view`, sans groupe supplémentaire, voit seulement un chroot avec un lecteur statique et ce snapshot. Le lecteur n’embarque pas SQLite ; après ouverture de ses fichiers fixes, seccomp interdit nouvelles ouvertures, processus, exécution et réseau. OpenSSH interdit shell libre, SCP/SFTP, PTY, tunnels TCP/Unix/agent/X11 et scripts utilisateur.
 
-**Parcours conseillé :** le ZIP Mac de la bêta contient les deux collecteurs Linux ; l'app détecte l'architecture et propose leur installation après consentement. Aucun compilateur à installer avec ce parcours : voir [INSTALLATION.md](INSTALLATION.md). L'installation avancée depuis les sources est décrite ci-dessous. La compilation croisée et les contrôles de fichiers ne remplacent pas une recette sur VPS réel, qui reste à effectuer. L'app n'est pas notarisée.
+L’exporteur reste de confiance : les bases contiennent potentiellement plus que les métadonnées qu’il extrait. Le répertoire Hermes est monté en lecture seule dans son espace ; les secrets usuels `.env`, `config.yaml`, `credentials`, `.ssh` sont masqués, mais ce n’est pas un inventaire universel des secrets d’une installation personnalisée. Ne pas stocker de secret dans un nom ou titre publié volontairement.
 
-## 1. Installation avancée depuis les sources (facultative)
+## 1. Compiler ou authentifier les composants
 
-Utiliser le compte Unix qui exécute Hermes, avec accès à ses données, sans sudo. Le script refuse l’installation en root ; ne pas changer les permissions des bases pour contourner une erreur. Pour Docker, le collecteur doit avoir un accès cohérent au répertoire Hermes et aux fichiers WAL/SHM sur le serveur ; le branchement dans un conteneur n’est pas automatisé dans cette version.
-
-Prérequis : SSH, Rust/Cargo récent compatible avec `collector/Cargo.lock` (édition Rust 2024), compilateur C et outils de compilation. Si Rust manque, suivre son [installation officielle](https://www.rust-lang.org/tools/install) ; le script n’installe pas silencieusement une chaîne de compilation.
-
-Depuis le poste de développement, produire une archive minimale :
+Examiner les sources d’une révision précise. Sur chaque architecture Linux cible, installer Rust 1.98.0, `musl-tools`, compilateur C et `sqlite3`, puis :
 
 ```sh
-sh scripts/package-collector.sh
+rustup target add aarch64-unknown-linux-musl
+CC=musl-gcc RUSTFLAGS='-C linker=musl-gcc -C target-feature=+crt-static' cargo build --locked --release --manifest-path collector/Cargo.toml --target aarch64-unknown-linux-musl
+RUSTFLAGS='-C linker=musl-gcc -C target-feature=+crt-static' cargo build --locked --release --manifest-path reader/Cargo.toml --target aarch64-unknown-linux-musl
 ```
 
-L’archive contient uniquement les sources nécessaires et ce guide, sans `.git`, préférences, données Hermes ou clés. La transférer sur le VPS, l’extraire dans un dossier dédié, puis depuis ce dossier :
+Pour x86_64, remplacer le triplet par `x86_64-unknown-linux-musl`. Un binaire compilé n’est pas une preuve de fonctionnement sur cette architecture.
+
+L’installateur exige les hashes des deux ELF statiques et leur architecture. Pour une compilation que vous avez examinée vous-même, ajouter explicitement `--reviewed-source-build`. Pour un paquet précompilé, fournir `--manifest`, `--signature`, `--allowed-signers` et `--signer` : vérification OpenSSH `ssh-keygen -Y verify`, namespace `agent-world-server`. Le manifeste JSON contient `protocol: 2`, `architecture`, `readerSha256` et `collectorSha256`. Vérifier la signature et les hashes depuis un outil de confiance avant de lancer un script en root ; le contrôle interne ne peut pas rendre sûr un installateur déjà modifié. Examiner les deux scripts administratifs. La clé de confiance doit être obtenue indépendamment du paquet. **Aucune clé de signature officielle 0.2.0 n’a encore été publiée : un hash seul n’authentifie pas le mainteneur.**
+
+## 2. Créer la clé de consultation sur le Mac
+
+Depuis les sources examinées :
 
 ```sh
-sh scripts/install-collector.sh
+sh scripts/prepare-viewer-key.sh "$HOME/.ssh/agent-world-viewer"
 ```
 
-Le binaire est installé dans `~/.local/bin/agent-world-collector`. Le script compile avec le verrou Cargo fourni et vérifie `--version`. Aucun fichier de configuration Hermes n’est modifié et aucun service n’est activé.
+Saisir une phrase secrète non vide. Le script refuse de remplacer une clé, génère une Ed25519 dédiée, enregistre la phrase par Apple OpenSSH dans le trousseau avec un agent temporaire isolé, puis arrête cet agent. L’app utilise `IdentityAgent=none`, `IdentitiesOnly=yes`, `UseKeychain=yes` et cette seule identité. Elle refuse les clés privées en clair, symlinks, hardlinks et permissions ouvertes. Fournir uniquement le fichier `.pub` à l’administrateur.
 
-Pour mettre à jour explicitement :
+Vérifier l’empreinte de la clé hôte par la console de l’hébergeur ou un canal indépendant. L’ajouter ensuite aux hôtes connus OpenSSH du Mac. `ssh-keyscan` seul n’authentifie pas le serveur. Ne pas utiliser `StrictHostKeyChecking=no` ; un changement d’empreinte doit bloquer jusqu’à vérification.
+
+## 3. Politique d’export
+
+Sur le serveur, dans un fichier privé de l’administrateur :
+
+```json
+{"salt":"REMPLACER_PAR_64_CARACTERES_HEXA_ALEATOIRES","profiles":["default"],"disclose_names":false,"disclose_titles":false}
+```
+
+Générer le sel avec `openssl rand -hex 32`. Ajouter seulement les slugs de profils à publier. Un profil absent provoque un échec explicite. Conserver le sel lors des mises à jour pour garder les identifiants et avatars. Les alias lisibles se saisissent sur le Mac. Les noms/titres libres demandent une activation explicite côté serveur.
+
+## 4. Installation
+
+Garder une connexion administrative de secours ouverte. Hermes doit appartenir à un utilisateur non-root distinct. Copier les deux binaires, la politique, la clé publique et **les deux scripts voisins** `install-secure-vps.py` / `vps_admin.py` dans un dossier administratif examiné. Calculer les hashes avec `sha256sum`, puis adapter :
 
 ```sh
-sh scripts/install-collector.sh --replace
+sudo python3 scripts/install-secure-vps.py \
+  --hermes-root /home/hermes/.hermes --hermes-user hermes \
+  --policy /root/agent-world-policy.json --public-key /root/viewer.pub \
+  --collector /root/agent-world-collector --collector-sha256 HASH_COLLECTEUR \
+  --reader /root/agent-world-reader --reader-sha256 HASH_LECTEUR \
+  --reviewed-source-build
 ```
 
-Une copie de l’ancien binaire est conservée ; son chemin est affiché. Pour revenir en arrière, remplacer uniquement le collecteur par cette copie après avoir fermé Agent World. Pour désinstaller, retirer ce binaire et, si souhaité, ses sauvegardes identifiées. Ne pas supprimer le dossier Hermes.
+Sans `--apply`, l’installateur vérifie et décrit les emplacements sans installation. Après examen, relancer avec `--apply`. Pour un paquet authentifié, remplacer le choix de compilation personnelle par les quatre options de signature.
 
-## 2. Préparer SSH sur le Mac
+L’installation gère `/var/lib/agent-world`, deux binaires dans `/usr/local/libexec`, le compte `aw-view`, deux unités `agent-world-export` et un seul fragment SSH `60-agent-world.conf`. Elle refuse compte/répertoire/fragments existants non gérés. Elle valide la syntaxe et la politique SSH effective avant rechargement ; elle exige `PermitUserEnvironment no` global. Un échec après sauvegarde restaure les fichiers et le service précédents. Une interruption brutale du processus/OS ne peut pas exécuter ce retour automatique : utiliser la sauvegarde root affichée, garder l’accès de secours, puis relancer.
 
-Faire une première connexion manuelle vers le **nom/adresse et le port exacts** du VPS. Comparer l’empreinte de clé de serveur avec une source fiable de l’hébergeur avant de l’accepter. Une clé modifiée doit être investiguée, pas supprimée automatiquement de known_hosts.
+Contrôler `systemctl status agent-world-export.timer`, le service et `sshd -T -C user=aw-view,host=localhost,addr=127.0.0.1`. Tester la clé avec `snapshot` et la requête `{"protocol":2}` ; `id`, SFTP et un forwarding doivent être refusés. La VM du projet exécute ces tentatives avec de fausses données et sa propre clé. L’app ne certifie pas à distance la configuration d’un serveur inconnu.
 
-L’app utilise `/usr/bin/ssh`, clés déjà approuvées et authentification par clé. Une clé protégée doit être déverrouillée dans l’agent SSH. On peut indiquer son chemin absolu sur le Mac dans le configurateur ; son contenu n’est jamais lu par le frontend ni enregistré dans les préférences.
+## Mise à jour, révocation, retour arrière, désinstallation
 
-Cette première version ignore `~/.ssh/config` (`-F /dev/null`) : saisir l’adresse réelle, l’utilisateur et le port, pas un alias dépendant de ProxyCommand/ProxyJump. Bastions, mots de passe interactifs, ajout automatique de clés hôte et transfert de l’agent SSH ne sont pas pris en charge.
+La mise à jour reprend la même commande administrative, nouveaux hashes et mêmes politique/sel. Le compte viewer ne peut pas la faire. Sauvegardes root-only `backup-…` avec manifeste et hashes ; pas de copie des bases Hermes.
 
-## 3. Configurer Agent World
+```sh
+sudo python3 scripts/vps_admin.py revoke --apply
+sudo python3 scripts/vps_admin.py rollback --backup /var/lib/agent-world/backup-IDENTIFIANT --apply
+sudo python3 scripts/vps_admin.py uninstall --apply
+```
 
-1. Ouvrir **Configurer mes agents**, puis **Sur un VPS**.
-2. Renseigner serveur, utilisateur, port ; clé privée locale facultative.
-3. Laisser le dossier distant vide pour le dossier Hermes résolu côté serveur, ou fournir un chemin absolu.
-4. Cliquer **Tester le VPS**. Ce bouton ne fait aucune installation.
-5. Sélectionner les profils, choisir les avatars et ouvrir le laboratoire.
+Sans `--apply`, ces commandes ne modifient rien. Révocation : vide uniquement le fichier de clés publiques dédié ; les lectures déjà en cours se terminent sous cinq secondes. Rotation : révoquer, générer une nouvelle clé dédiée, réinstaller la nouvelle `.pub`, vérifier, puis retirer l’ancienne clé/trousseau du Mac. **Un retour arrière restaure aussi l’ancienne clé autorisée : ne pas l’utiliser après vol de cette clé sans corriger la sauvegarde ou révoquer à nouveau.**
 
-La source est recontrôlée au moment de l’enregistrement. Source et préférences sont conservées atomiquement sur le Mac ; les identités sont séparées par serveur, utilisateur, port et racine distante. Le mode local reste disponible. Une seule source est affichée à la fois, pas un agrégateur simultané multi-VPS.
-
-## Transport et confidentialité
-
-- Commande distante fixe : `exec "$HOME/.local/bin/agent-world-collector" --stdio`.
-- Le dossier distant est transmis en JSON sur stdin, jamais interpolé dans une commande shell. Aucun SQL, commande d’agent ou chemin d’exécutable distant personnalisé n’est accepté.
-- Une connexion SSH par collecte ; pas de socket de contrôle persistant. Le polling de l’app reste sans chevauchement. Délai global local de 12 secondes ; requête limitée à 8 Kio et réponse à 4 Mio.
-- Protocole versionné (v1), contrôle des formes/limites et identifiants uniques ; champs inconnus non retransmis au frontend. Un résultat invalide n’est pas présenté comme un monde vide.
-- Seuls identités publiques, titres, états et preuves autorisés sont exportés. Pas de prompts, conversations, tokens ou variables d’environnement. **Un titre peut lui-même contenir une information sensible** : ne pas partager aveuglément une capture.
-- Horloges du Mac/VPS synchronisées nécessaires : un décalage ou snapshot âgé de plus de 30 secondes est refusé. La durée de transport est ajoutée conservativement à l’âge des preuves.
-- Coupure SSH : dernier état conservé et monde figé, message de connexion perdue ; la fraîcheur continue de vieillir. Reconnexion à la collecte suivante ou via Réessayer.
-- StrictHostKeyChecking=yes, BatchMode=yes, aucun transfert d’agent/port, aucune acceptation silencieuse d’identité hôte. Les erreurs publiques sont des codes expurgés, pas le stderr brut.
-- Le compte SSH garde ses droits système habituels. Le collecteur restreint ce qu’il lit/expose ; ce n’est pas un sandbox OS ni une clé SSH magiquement limitée à la lecture. Un compte/une clé dédiés et une commande forcée peuvent durcir un déploiement, mais ne sont pas configurés automatiquement.
-- Les garanties SQLite détaillées dans [SECURITY.md](SECURITY.md) restent applicables : aucune mutation SQL ; des fichiers auxiliaires WAL/SHM peuvent néanmoins être créés/gérés par SQLite.
-
-## Erreurs utiles
-
-| Message | Action |
-| --- | --- |
-| Identité non vérifiée/modifiée | Vérifier l’empreinte côté hébergeur et la première connexion SSH |
-| Authentification refusée | Vérifier utilisateur, clé et agent SSH déverrouillé |
-| Collecteur introuvable | Installer le collecteur avec le même utilisateur SSH |
-| Hermes introuvable | Vérifier utilisateur, racine distante et droits ; ne pas ouvrir les permissions globalement |
-| Version incompatible | Déployer le collecteur de la même version que l’app |
-| Données anciennes/horloge décalée | Synchroniser l’heure des deux machines |
-
-## Recette avant distribution publique
-
-Tests locaux : protocole/collecteur avec vrais fichiers temporaires, commandes SSH sans interpolation, délais de processus, erreurs expurgées, stockage multi-source, onboarding et reprise après coupure simulés. Sans VPS fourni, cela ne valide pas une connexion SSH réseau réelle ni une installation Linux.
-
-À effectuer sur VPS de test : Linux x86_64 et ARM64, clé protégée, hôte inconnu/modifié, mauvais utilisateur, collecteur absent/incompatible, changement de racine, données WAL en écriture, coupure/rétablissement réseau, installation/mise à jour/retour arrière. Les binaires embarqués suppriment le prérequis Cargo, pas le besoin de cette recette.
-
-Références de conception : [OpenSSH ssh](https://man.openbsd.org/ssh), [configuration SSH](https://man.openbsd.org/ssh_config), [connexion distante documentée par Hermes](https://hermes-agent.nousresearch.com/docs/user-guide/desktop). L’API Hermes distante n’est pas intégrée ici : la parité de ses preuves avec notre contrat Kanban/session n’a pas été établie, d’où la réutilisation du lecteur existant.
+Désinstallation : arrête le service/timer, retire le fragment, les binaires et le snapshot courant. Les données Hermes restent intactes ; compte sans exécutable de connexion et sauvegardes administratives sont conservés pour récupération/suppression explicite. Une connexion administrative existante reste nécessaire pour contrôler le résultat. Ne pas supprimer des répertoires Hermes, modifier globalement SSH ou réutiliser une clé administrative.

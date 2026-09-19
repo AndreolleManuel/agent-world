@@ -10,9 +10,49 @@ import {
   phaseSlotIndex,
   phasePresentation,
   placementFor,
+  reconcileDeskPresence,
   reconcilePhaseSlots,
   routeBetween,
 } from './placement';
+
+describe('desk presence between short tasks', () => {
+  const worker = { agent_id: 'atlas', task_phase: 'live_run' };
+  const available = { ...worker, task_phase: 'available' };
+
+  it('keeps the desk for 90 seconds after the last active observation, without renewing on idle polls', () => {
+    const working = reconcileDeskPresence({}, [worker], 1_000);
+    const idle = reconcileDeskPresence(working, [available], 6_000);
+    expect(idle.atlas).toEqual({ phase: 'live_run', lastActiveAt: 1_000 });
+    expect(reconcileDeskPresence(idle, [available], 90_999)).toEqual(idle);
+    expect(reconcileDeskPresence(idle, [available], 91_000)).toEqual({});
+    expect(available.task_phase).toBe('available');
+  });
+
+  it('restarts the full delay when another short run or session is observed', () => {
+    const first = reconcileDeskPresence({}, [worker], 0);
+    const resumed = reconcileDeskPresence(first, [{ ...worker, task_phase: 'live_session' }], 75_000);
+    expect(reconcileDeskPresence(resumed, [available], 164_999).atlas)
+      .toEqual({ phase: 'live_session', lastActiveAt: 75_000 });
+    expect(reconcileDeskPresence(resumed, [available], 165_000)).toEqual({});
+  });
+
+  it('does not invent recent work for an initially idle or rediscovered agent', () => {
+    expect(reconcileDeskPresence({}, [available], 0)).toEqual({});
+    const working = reconcileDeskPresence({}, [worker], 0);
+    const removed = reconcileDeskPresence(working, [], 5_000);
+    expect(removed).toEqual({});
+    expect(reconcileDeskPresence(removed, [available], 10_000)).toEqual({});
+  });
+
+  it.each(['blocked', 'review_pending', 'telemetry_unavailable', 'ready_unclaimed', 'todo_not_started'])(
+    'clears the grace period immediately on %s', (task_phase) => {
+      const working = reconcileDeskPresence({}, [worker], 0);
+      const changed = reconcileDeskPresence(working, [{ ...worker, task_phase }], 5_000);
+      expect(changed).toEqual({});
+      expect(reconcileDeskPresence(changed, [available], 10_000)).toEqual({});
+    },
+  );
+});
 
 describe('placementFor', () => {
   it('distinguishes a confirmed Kanban run from an active Hermes session', () => {

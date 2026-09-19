@@ -22,7 +22,9 @@ fn now() -> OffsetDateTime {
 fn board_discovery_cap_is_explicitly_partial() {
     let fixture = tempfile::tempdir().unwrap();
     for index in 0..65 {
-        let path = fixture.path().join(format!("kanban/boards/board-{index:03}/kanban.db"));
+        let path = fixture
+            .path()
+            .join(format!("kanban/boards/board-{index:03}/kanban.db"));
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         let db = rusqlite::Connection::open(path).unwrap();
         db.execute_batch("CREATE TABLE tasks (id TEXT, assignee TEXT, status TEXT, title TEXT, block_kind TEXT, created_at INTEGER);
@@ -271,7 +273,7 @@ fn rejects_heartbeat_outside_configured_root() {
     let outside = tempfile::tempdir().unwrap();
     let candidate = outside.path().join("gateway.heartbeat");
     write_heartbeat(&candidate, "2026-09-02T12:00:00Z");
-    let cfg = config(root.path()).with_heartbeat_path(PathBuf::from(candidate));
+    let cfg = config(root.path()).with_heartbeat_path(candidate);
     let error = HeartbeatReader::new(cfg).read_at(now()).unwrap_err();
     assert_eq!(error, ReadError::OutsideRoot);
 }
@@ -393,13 +395,7 @@ fn does_not_follow_a_symlinked_profiles_registry() {
     write_profile(&external.path().join("outside"), Some("Outside"));
     symlink(external.path(), root.path().join("profiles")).unwrap();
 
-    let ids: Vec<_> = discover_agent_registry(root.path())
-        .unwrap()
-        .iter()
-        .map(|config| config.agent_id().to_owned())
-        .collect();
-
-    assert_eq!(ids, vec!["default".to_owned()]);
+    assert!(discover_agent_registry(root.path()).is_err());
 }
 
 #[test]
@@ -984,14 +980,23 @@ fn unreadable_board_is_not_a_resting_agent() {
     let snapshot = read_world_snapshot(root.path(), &[config(root.path())]);
     assert!(snapshot.kanban.partial);
     assert_eq!(snapshot.agents[0].task_phase, "telemetry_unavailable");
-    assert!(snapshot.agents[0].evidence.iter().any(|e|
-        e.source == "kanban:default" && e.error_code.as_deref() == Some("schema_read_failed")));
+    assert!(
+        snapshot.agents[0]
+            .evidence
+            .iter()
+            .any(|e| e.source == "kanban:default"
+                && e.error_code.as_deref() == Some("schema_read_failed"))
+    );
 }
 
 #[test]
 fn broken_board_does_not_erase_a_run_confirmed_on_another_board() {
     let root = tempfile::tempdir().unwrap();
-    create_kanban_database(&root.path().join("kanban/boards/healthy/kanban.db"), "confirmed", "Confirmed task");
+    create_kanban_database(
+        &root.path().join("kanban/boards/healthy/kanban.db"),
+        "confirmed",
+        "Confirmed task",
+    );
     create_runtime_database(&root.path().join("state.db"), false);
     fs::write(root.path().join("kanban.db"), "not sqlite").unwrap();
     let snapshot = read_world_snapshot(root.path(), &[config(root.path())]);
@@ -1001,7 +1006,12 @@ fn broken_board_does_not_erase_a_run_confirmed_on_another_board() {
     assert_eq!(agent.task_phase, "live_run");
     assert_eq!(agent.board_slug.as_deref(), Some("healthy"));
     assert_eq!(agent.task_id.as_deref(), Some("confirmed"));
-    assert!(agent.evidence.iter().any(|e| e.source == "kanban:default" && e.error_code.is_some()));
+    assert!(
+        agent
+            .evidence
+            .iter()
+            .any(|e| e.source == "kanban:default" && e.error_code.is_some())
+    );
     assert_eq!(snapshot.kanban.tasks.len(), 1);
 }
 
@@ -1088,5 +1098,90 @@ fn readable_empty_runtime_source_is_distinct_from_missing() {
             .evidence
             .iter()
             .any(|e| e.source == "hermes-session" && e.status == "empty")
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn denied_registry_and_tombstones_never_look_like_an_empty_registry() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = tempfile::tempdir().unwrap();
+    write_profile(root.path(), None);
+    write_profile(&root.path().join("profiles/named"), None);
+    for path in [
+        root.path().join("profiles"),
+        root.path().join("profiles/.deleted"),
+    ] {
+        fs::create_dir_all(&path).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o0)).unwrap();
+        let result = discover_agent_registry(root.path());
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o700)).unwrap();
+        if unsafe { libc::geteuid() } != 0 {
+            assert!(result.is_err());
+        }
+    }
+}
+
+#[test]
+fn reserved_default_and_unreadable_metadata_fail_explicitly() {
+    let root = tempfile::tempdir().unwrap();
+    write_profile(root.path(), None);
+    write_profile(&root.path().join("profiles/default"), None);
+    assert_eq!(
+        discover_agent_registry(root.path()).unwrap_err(),
+        RegistryError::Invalid
+    );
+    fs::rename(
+        root.path().join("profiles/default"),
+        root.path().join("profiles/named"),
+    )
+    .unwrap();
+    fs::remove_file(root.path().join("profiles/named/profile.yaml")).unwrap();
+    assert_eq!(
+        discover_agent_registry(root.path()).unwrap_err(),
+        RegistryError::Invalid
+    );
+}
+
+#[test]
+fn invalid_entries_and_tombstones_are_bounded_before_sorting() {
+    let root = tempfile::tempdir().unwrap();
+    write_profile(root.path(), None);
+    let profiles = root.path().join("profiles");
+    fs::create_dir(&profiles).unwrap();
+    for n in 0..1024 {
+        fs::write(profiles.join(format!(".ignored-{n}")), b"").unwrap();
+    }
+    assert_eq!(
+        discover_agent_registry(root.path()).unwrap_err(),
+        RegistryError::BudgetExceeded
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn rejects_hardlinked_profile_and_heartbeat_files() {
+    let root = tempfile::tempdir().unwrap();
+    write_profile(root.path(), None);
+    fs::hard_link(
+        root.path().join("profile.yaml"),
+        root.path().join("copy.yaml"),
+    )
+    .unwrap();
+    assert!(discover_agent_registry(root.path()).is_err());
+    let state = tempfile::tempdir().unwrap();
+    write_heartbeat(
+        &state.path().join("gateway.heartbeat"),
+        "2026-09-02T12:00:00Z",
+    );
+    fs::hard_link(
+        state.path().join("gateway.heartbeat"),
+        state.path().join("copy"),
+    )
+    .unwrap();
+    assert!(
+        HeartbeatReader::new(config(state.path()))
+            .read_at(now())
+            .is_err()
     );
 }

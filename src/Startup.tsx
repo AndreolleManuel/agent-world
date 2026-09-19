@@ -3,12 +3,13 @@ import { invoke } from '@tauri-apps/api/core';
 import App from './App';
 import { loadWorldSnapshot } from './heartbeat';
 import type { AgentHeartbeatDto } from './heartbeat';
-import { readPreferences, activatePreferences, resetPreferences } from './preferences';
+import { readPreferences, activatePreferences, resetPreferences, reconcileAvatars } from './preferences';
 import { AvatarPreview, AVATAR_LABELS } from './AvatarPreview';
 import type { Preferences } from './preferences';
 import RemoteConnection, { EMPTY_SSH_SOURCE, connectionError, type SshSource } from './RemoteConnection';
 import { useSetupOperation } from './useSetupOperation';
 import CompanyLink from './CompanyLink';
+import { own } from './records';
 
 export default function Startup() {
   const [preferences, setPreferences] = useState(readPreferences);
@@ -66,7 +67,8 @@ export default function Startup() {
       const next: Preferences = { version: 1, configured: current?.configured ?? false, root: sourceId,
         knownAgents: ids,
         enabledAgents: current?.configured ? current.enabledAgents.filter((id) => ids.includes(id)) : ids,
-        avatars: { ...Object.fromEntries(result.agents.map((a, i) => [a.agent_id, (i % 12) + 1])), ...current?.avatars },
+        avatars: reconcileAvatars(ids, current?.avatars),
+        aliases: Object.fromEntries(ids.flatMap((id) => current?.aliases && own(current.aliases, id) ? [[id, own(current.aliases, id)!]] : [])),
       };
       const added = current?.configured ? ids.filter((id) => !(current.knownAgents ?? current.enabledAgents).includes(id)).length : 0;
       const removed = current?.enabledAgents.filter((id) => !ids.includes(id)).length ?? 0;
@@ -103,7 +105,7 @@ export default function Startup() {
     const added = ids.filter((id) => !(preferences.knownAgents ?? preferences.enabledAgents).includes(id)).length;
     const removed = preferences.enabledAgents.filter((id) => !ids.includes(id)).length;
     setRegistryNotice([added ? `${added} nouveaux profils détectés : choisissez ceux à afficher dans la configuration.` : '', removed ? `${removed} profils sélectionnés ne sont plus présents.` : ''].filter(Boolean).join(' '));
-    return { ...snapshot, agents: snapshot.agents.filter((agent) => preferences.enabledAgents.includes(agent.agent_id)) };
+    return { ...snapshot, agents: snapshot.agents.filter((agent) => preferences.enabledAgents.includes(agent.agent_id)).map((agent) => ({ ...agent, display_name: preferences.aliases && own(preferences.aliases, agent.agent_id) || agent.display_name })) };
   }, [preferences]);
   const selectedIds = draft.enabledAgents.filter((id) => agents.some((a) => a.agent_id === id));
   async function launch() {
@@ -165,7 +167,7 @@ export default function Startup() {
         <label htmlFor="hermes-root">Dossier Hermes</label>
         <div className="source-input"><input id="hermes-root" disabled={saving} value={root} placeholder="Détection automatique" onChange={(e) => { requestGeneration.current++; cancelDetection(); setRoot(e.target.value); setDetectedRoot(null); }} />
           <button disabled={busy}>{busy ? 'Recherche…' : 'Détecter'}</button></div></> : <>
-          <RemoteConnection value={sshSource} disabled={saving} toolsDisabled={busy} beginOperation={begin} onChange={(value) => { invalidateConnection(); setSshSource(value); }} />
+          <RemoteConnection value={sshSource} disabled={saving} onChange={(value) => { invalidateConnection(); setSshSource(value); }} />
           <button className="primary-action" disabled={busy || !sshSource.host.trim() || !sshSource.user.trim()}>{busy ? 'Connexion et détection…' : 'Tester le VPS'}</button>
         </>}
       </form>
@@ -181,7 +183,7 @@ export default function Startup() {
     </section>
     {agents.length > 0 && <section className="setup-card" aria-labelledby="setup-avatars">
       <p className="step-number">02 · Votre équipe</p><h2 id="setup-avatars">Choisissez leurs avatars</h2>
-      <p>Les noms viennent de Hermes. Les avatars et la sélection sont enregistrés sur ce Mac.</p>
+      <p>Les noms locaux viennent de Hermes ; les exports privés utilisent des alias. Les avatars et la sélection restent sur ce Mac.</p>
       <div className="setup-agents">{agents.map((agent) => {
         const avatar = draft.avatars[agent.agent_id] ?? 1;
         return <article className={`setup-agent${draft.enabledAgents.includes(agent.agent_id) ? ' is-enabled' : ''}`} key={agent.agent_id}>
@@ -189,6 +191,7 @@ export default function Startup() {
           <button className="avatar-choice" disabled={saving} aria-label={`Choisir l’avatar de ${agent.display_name}`} onClick={(event) => { avatarTrigger.current = event.currentTarget; setChoosingAvatar(agent.agent_id); }}>
             <AvatarPreview avatar={avatar} /><span>Changer d’avatar <span aria-hidden="true">↗</span></span>
           </button>
+          {detectedRemote && <label>Nom sur ce Mac<input maxLength={64} disabled={saving} placeholder={agent.display_name} value={draft.aliases && own(draft.aliases, agent.agent_id) || ''} onChange={(event) => setDraft((d) => ({ ...d, aliases: { ...d.aliases, [agent.agent_id]: event.target.value } }))} /></label>}
           <small>{agent.observed_state === 'connected' ? '● Gateway connecté' : '○ Gateway non connecté'}</small>
         </article>;
       })}</div>

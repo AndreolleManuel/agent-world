@@ -1,46 +1,38 @@
-# Installer Agent World sur Mac
+# Agent World 0.2.0 — installation Mac
 
-Agent World est une app gratuite de supervision visuelle, créée par [AM Labs](https://amlabs.dev). Elle observe vos agents Hermes ; elle ne leur envoie pas de tâches. Aucun compte AM Labs, Node.js ou Rust n'est nécessaire pour utiliser le paquet Mac complet.
+Candidat pour développeurs, gratuit et open source. Hermes doit déjà fonctionner. Les archives publiques 0.1.x suivent un ancien modèle de connexion : ne pas les confondre avec ce candidat.
 
-Avant de connecter vos agents, consultez [Données et confidentialité](PRIVACY.md) : sources lues, paramètres conservés, connexion SSH directe, diagnostic manuel et limites de sécurité. Aucun envoi automatique de données d'agents à AM Labs n'est prévu dans cette version.
+## Depuis les sources
 
-## Télécharger la bonne archive
+Sur Mac, installer Node.js 22+, Rust 1.98.0 et les outils Xcode. Depuis une copie examinée du dépôt :
 
-Ouvrir la [bêta Mac officielle](https://github.com/AndreolleManuel/agent-world/releases/tag/v0.1.0-beta.1), puis télécharger **Agent-World-0.1.0-mac-universal-UNNOTARIZED.zip** dans les fichiers joints. Ne pas choisir **Source code (zip)** : celui-ci contient le projet à compiler, pas l'app prête à ouvrir.
+```sh
+npm ci
+npm run lint
+npm test
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+npm run build:beta -- --bundles app
+npm run package:beta
+```
 
-Le même téléchargement fonctionne sur Mac Intel et Apple Silicon. Minimum déclaré : **macOS 12.3**, avec WebKit/Safari 15.4 ou ultérieur. La recette sur Mac Intel et sur le système minimum reste à terminer pour cette bêta ; seules les machines effectivement testées pourront être annoncées comme validées.
+Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256SUMS`. Le hash détecte une modification ; il n’authentifie pas à lui seul l’auteur. Une bêta publique doit provenir de la [page Releases du dépôt officiel](https://github.com/AndreolleManuel/agent-world/releases) et annoncer explicitement 0.2.0. Aucun lien vers un fichier inexistant n’est fourni.
 
-Télécharger aussi ce guide et `SHA256SUMS` depuis la même release. La somme contrôle l'intégrité du fichier reçu, mais ne remplace pas la vérification de sa provenance.
+## Bundle Mac
 
-## Première ouverture — version non notarisée
+Extraire l’archive, placer Agent World.app dans Applications, puis ouvrir l’app. La build ad hoc n’est pas notarisée : Gatekeeper peut la bloquer. Ne pas désactiver Gatekeeper ni enlever globalement la quarantaine. Si le candidat est identifié et accepté, suivre l’exception individuelle décrite par [Apple](https://support.apple.com/fr-fr/102445). Une alerte « malveillant », « endommagé » ou « modifié » demande d’arrêter et vérifier le fichier.
 
-1. Extraire le ZIP et déplacer **Agent World.app** dans **Applications**.
-2. Essayer de l'ouvrir. Cette version est signée ad-hoc, **pas notarisée par Apple** : macOS peut afficher un avertissement de développeur non identifié ou d'app qu'Apple ne peut pas vérifier.
-3. Uniquement si le fichier provient de la source officielle et que vous lui faites confiance, ouvrir **Réglages Système → Confidentialité et sécurité → Ouvrir quand même**, puis confirmer. Sur Monterey, l'intitulé est **Préférences Système → Sécurité et confidentialité → Général**.
-4. L'exception concerne cette app ; ses ouvertures suivantes sont normalement habituelles. Voir la [procédure Apple](https://support.apple.com/fr-fr/102445).
+Compilation universelle arm64/x86_64 ; minimum déclaré macOS 12.3. Seules les plateformes effectivement testées sont annoncées dans [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md). Un candidat ad hoc n’apporte pas l’identité Developer ID d’une distribution notarisée.
 
-Ne pas désactiver Gatekeeper, ne pas retirer globalement les contrôles de sécurité et ne pas exécuter de commande de contournement trouvée ailleurs. Si l'alerte indique un logiciel malveillant, une app endommagée ou modifiée, **arrêter l'installation** et signaler le problème. Les Mac administrés par une entreprise peuvent interdire l'exception ; demander au service informatique. Une nouvelle version de l'app peut nécessiter une nouvelle autorisation.
+## Source locale
 
-## Connecter ses agents
+Choisir « Sur ce Mac », détecter ou saisir la racine Hermes. Une boîte de dialogue native décrit l’accès avant collecte. L’extraction est isolée par macOS et échoue si le confinement n’est pas disponible. Choisir agents et avatars puis ouvrir le laboratoire. Les noms locaux sont affichés ; les titres restent masqués. Le frontend ne reçoit pas les bases.
 
-Hermes doit déjà être installé et configuré ; Agent World ne l'installe pas.
+## Source VPS
 
-**Hermes sur ce Mac :** choisir « Sur ce Mac », laisser la détection automatique ou indiquer son dossier Hermes, choisir les agents et leurs avatars, puis ouvrir le laboratoire. Les agents sans tâche restent visibles s'ils sont sélectionnés.
+L’administrateur prépare d’abord le service séparé décrit dans [VPS.md](VPS.md). Dans l’app, choisir le serveur, le port, l’utilisateur imposé `aw-view` et le chemin de la nouvelle clé chiffrée dédiée. Aucun compte administrateur ni mot de passe de VPS ne doit être saisi dans l’app. Une confirmation native valide la source ; les alias « Nom sur ce Mac » ne modifient pas le serveur.
 
-**Hermes sur un VPS :** choisir « Sur un VPS », indiquer serveur, utilisateur et port SSH. L'accès doit fonctionner par clé et l'empreinte du serveur doit avoir été vérifiée auprès de l'hébergeur puis approuvée dans SSH. Une clé protégée doit être déverrouillée dans l'agent SSH du Mac. Si cette préparation n'est pas faite, demander l'aide de la personne qui administre le VPS ; l'app ne doit pas approuver aveuglément un serveur.
+## Migration, mise à jour, retrait
 
-Cliquer « Vérifier mon serveur ». La distribution et l'architecture Linux sont détectées automatiquement. Si proposé, autoriser puis installer le collecteur inclus ; cliquer ensuite « Tester le VPS », choisir les avatars et ouvrir le laboratoire. Aucun compilateur à installer sur le VPS avec ce parcours. Aucun port web public ni relais AM Labs.
+Les préférences 0.1.x sont copiées dans `hermes-source.pre-v2.json` avant migration des identifiants, sélections et avatars. Les connexions générales anciennes restent à reconfigurer et ne se reconnectent pas automatiquement. En cas de configuration corrompue, la récupération archive le fichier après confirmation native ; elle ne supprime aucune donnée Hermes.
 
-Cette bêta n'automatise pas les connexions par mot de passe, alias SSH, bastions, Docker ni l'installation en tant que root. Détails dans [VPS.md](VPS.md).
-
-## En cas de problème
-
-Le configurateur propose un diagnostic partageable sans adresse, clé privée ni contenu des agents. Consulter [TEST-BETA.md](TEST-BETA.md) pour transmettre un retour utile. Ne jamais envoyer vos conversations, bases Hermes, clés ou mots de passe.
-
-Si l'app signale ses **préférences endommagées**, elle propose « Sauvegarder et réinitialiser les préférences » après confirmation. Cela réinitialise uniquement connexion, sélection et avatars. L'ancien fichier reste dans un sous-dossier `recovery-…` du dossier de configuration Agent World (identifiant d'app `com.amlabs.pixelops`, sous `~/Library/Application Support` sur macOS). Les agents et données Hermes ne sont pas supprimés. Reconfigurer ensuite la connexion. Pour restaurer manuellement cette sauvegarde, fermer l'app, conserver également la configuration actuelle et demander de l'aide avant de remplacer un fichier.
-
-## Mise à jour et désinstallation
-
-Les mises à jour sont manuelles : fermer l'app, télécharger la nouvelle archive depuis Releases et remplacer l'app dans Applications. Les préférences sont séparées de l'app ; ne pas supprimer leur dossier. Le configurateur peut mettre à jour le collecteur VPS après une nouvelle autorisation.
-
-Pour désinstaller, mettre l'app à la corbeille. Le retrait éventuel du collecteur VPS et les sauvegardes sont détaillés dans [BETA-MAC.md](BETA-MAC.md). Ne pas effacer le dossier Hermes.
+Fermer l’app avant de la remplacer. Mettre l’app à la corbeille ne révoque pas la clé VPS. Révoquer côté serveur selon [VPS.md](VPS.md), puis retirer uniquement la clé dédiée et son entrée de trousseau si souhaité. Les préférences sont dans le dossier de configuration de l’app (`com.amlabs.pixelops` sous `~/Library/Application Support`). Ne jamais effacer Hermes pour désinstaller Agent World.

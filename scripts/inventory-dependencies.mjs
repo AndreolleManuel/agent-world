@@ -33,7 +33,7 @@ export function rustDependencies(inputs) {
 
 export function inventory(root, cargo = 'cargo') {
   const npm = npmDependencies(JSON.parse(readFileSync(resolve(root, 'package-lock.json'), 'utf8')));
-  const rust = rustDependencies(['src-tauri', 'collector'].map((component) => ({
+  const rust = rustDependencies(['src-tauri', 'collector', 'reader'].map((component) => ({
     component,
     metadata: JSON.parse(execFileSync(cargo, ['metadata', '--locked', '--offline', '--format-version', '1', '--manifest-path', `${component}/Cargo.toml`], { cwd: root, maxBuffer: 16 * 1024 * 1024 })),
   })));

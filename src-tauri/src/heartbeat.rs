@@ -1,5 +1,6 @@
 use crate::sqlite_read::{self, QueryError};
-use serde::{Deserialize, Serialize};
+pub use crate::telemetry::*;
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 #[cfg(not(unix))]
 use std::fs;
@@ -107,73 +108,6 @@ impl ReaderConfig {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ObservedState {
-    Connected,
-    Disconnected,
-    Unavailable,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HeartbeatDto {
-    pub agent_id: String,
-    pub profile: String,
-    pub role: String,
-    pub observed_state: ObservedState,
-    pub last_evidence_at: String,
-    pub age_seconds: u64,
-    pub source: String,
-    pub confidence: String,
-    pub machine_id: String,
-    pub origin: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AgentHeartbeatDto {
-    pub agent_id: String,
-    pub display_name: String,
-    pub profile: String,
-    pub role: String,
-    pub observed_state: ObservedState,
-    pub last_evidence_at: Option<String>,
-    pub age_seconds: Option<u64>,
-    pub source: String,
-    pub confidence: String,
-    pub machine_id: String,
-    pub origin: String,
-    pub activity: String,
-    pub room: String,
-    pub task_status: Option<String>,
-    pub task_title: Option<String>,
-    pub task_phase: String,
-    pub board_slug: Option<String>,
-    pub task_id: Option<String>,
-    pub waiting_reason: Option<String>,
-    pub telemetry_partial: bool,
-    pub evidence: Vec<SourceEvidence>,
-    pub session: Option<SessionEvidence>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SourceEvidence {
-    pub source: String,
-    pub status: String,
-    pub observed_at: Option<String>,
-    pub age_seconds: Option<u64>,
-    pub confidence: String,
-    pub error_code: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SessionEvidence {
-    pub id: String,
-    pub title: String,
-    pub observed_at: String,
-    pub age_seconds: u64,
-    pub confidence: String,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct KanbanTaskSnapshot {
     assignee: String,
@@ -197,32 +131,6 @@ pub struct KanbanTaskSnapshot {
     block_kind: Option<String>,
     #[serde(default)]
     created_at: i64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct KanbanTaskDto {
-    pub board_slug: String,
-    pub task_id: String,
-    pub title: String,
-    pub status: String,
-    pub assignee: Option<String>,
-    pub waiting_reason: Option<String>,
-    pub created_at: i64,
-    pub run_observed_at: Option<i64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct KanbanSnapshotDto {
-    pub tasks: Vec<KanbanTaskDto>,
-    pub partial: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct WorldSnapshotDto {
-    pub agents: Vec<AgentHeartbeatDto>,
-    pub kanban: KanbanSnapshotDto,
-    pub collected_at: String,
-    pub collection_ms: u64,
 }
 
 impl KanbanTaskSnapshot {
@@ -268,6 +176,10 @@ pub enum RegistryError {
     Unavailable,
     #[error("Hermes profile registry exceeds the supported profile limit")]
     TooManyProfiles,
+    #[error("Hermes profile registry is invalid or incomplete")]
+    Invalid,
+    #[error("Hermes profile registry traversal budget exceeded")]
+    BudgetExceeded,
 }
 
 pub fn resolve_hermes_root() -> Result<PathBuf, RegistryError> {
@@ -314,29 +226,50 @@ pub fn discover_agent_registry(root: &Path) -> Result<Vec<ReaderConfig>, Registr
     let profiles_root = root.join("profiles");
 
     #[cfg(unix)]
-    if let Ok(directory) = root
-        .canonicalize()
-        .map(|canonical_root| canonical_root.join("profiles"))
-        .map_err(|_| ReadError::RootUnavailable)
-        .and_then(|registry| open_directory_no_symlinks(&registry))
     {
-        let tombstones = tombstoned_profiles_at(&directory);
-        for name in directory_entry_names(&directory).unwrap_or_default() {
-            let Some(slug) = name.to_str().map(str::to_owned) else {
-                continue;
-            };
-            if !valid_profile_slug(&slug)
-                || matches!(slug.as_str(), "backups" | "snapshots")
-                || tombstones.iter().any(|item| item == &slug)
+        let started = Instant::now();
+        let deadline = started + Duration::from_millis(500);
+        let canonical = root
+            .canonicalize()
+            .map_err(|_| RegistryError::Unavailable)?;
+        let root_directory =
+            open_directory_no_symlinks(&canonical).map_err(|_| RegistryError::Unavailable)?;
+        // Only a genuinely absent registry means that there are no named profiles.
+        let directory = open_optional_directory(&root_directory, std::ffi::OsStr::new("profiles"))?;
+        if let Some(directory) = directory {
+            let tombstones = tombstoned_profiles_at(&directory, deadline)?;
+            for name in directory_entry_names(&directory, deadline)
+                .map_err(|_| RegistryError::BudgetExceeded)?
             {
-                continue;
-            }
-            let Some(profile_directory) = open_child_directory(&directory, &name) else {
-                continue;
-            };
-            if let Some(profile) =
-                profile_config_at(&profile_directory, &profiles_root.join(&slug), &slug)
-            {
+                if Instant::now() >= deadline {
+                    return Err(RegistryError::BudgetExceeded);
+                }
+                let Some(slug) = name.to_str().map(str::to_owned) else {
+                    continue;
+                };
+                if !valid_profile_slug(&slug)
+                    || matches!(slug.as_str(), "backups" | "snapshots")
+                    || tombstones.contains(&slug)
+                {
+                    continue;
+                }
+                if slug == "default" {
+                    return Err(RegistryError::Invalid);
+                }
+                let profile_directory = match open_child_directory(&directory, &name) {
+                    Some(file) => file,
+                    None => {
+                        match std::io::Error::last_os_error().raw_os_error() {
+                            // Non-directories and links are never valid profiles.
+                            Some(libc::ENOTDIR | libc::ELOOP) => continue,
+                            _ => return Err(RegistryError::Unavailable),
+                        }
+                    }
+                };
+                // A directory without readable/valid metadata is not silently hidden.
+                let profile =
+                    profile_config_at(&profile_directory, &profiles_root.join(&slug), &slug)
+                        .ok_or(RegistryError::Invalid)?;
                 profiles.push(profile);
                 if profiles.len() > MAX_PROFILES {
                     return Err(RegistryError::TooManyProfiles);
@@ -403,17 +336,32 @@ fn tombstoned_profiles(profiles_root: &Path) -> Vec<String> {
 }
 
 #[cfg(unix)]
-fn tombstoned_profiles_at(profiles_root: &File) -> Vec<String> {
-    let Some(deleted) = open_child_directory(profiles_root, std::ffi::OsStr::new(".deleted"))
+fn open_optional_directory(
+    parent: &File,
+    name: &std::ffi::OsStr,
+) -> Result<Option<File>, RegistryError> {
+    match open_child_directory(parent, name) {
+        Some(file) => Ok(Some(file)),
+        None if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENOENT) => Ok(None),
+        None => Err(RegistryError::Unavailable),
+    }
+}
+
+#[cfg(unix)]
+fn tombstoned_profiles_at(
+    profiles_root: &File,
+    deadline: Instant,
+) -> Result<Vec<String>, RegistryError> {
+    let Some(deleted) = open_optional_directory(profiles_root, std::ffi::OsStr::new(".deleted"))?
     else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
-    directory_entry_names(&deleted)
-        .unwrap_or_default()
+    Ok(directory_entry_names(&deleted, deadline)
+        .map_err(|_| RegistryError::BudgetExceeded)?
         .into_iter()
         .filter_map(|name| name.to_str().map(str::to_owned))
         .filter(|slug| valid_profile_slug(slug))
-        .collect()
+        .collect())
 }
 
 fn profile_config(profile_home: &Path, slug: &str) -> Option<ReaderConfig> {
@@ -460,7 +408,15 @@ fn read_public_display_name(path: &Path, fallback: &str) -> Option<String> {
 }
 
 fn read_public_display_name_from_file(file: File, fallback: &str) -> Option<String> {
-    if !file.metadata().ok()?.is_file() {
+    let metadata = file.metadata().ok()?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if metadata.nlink() != 1 {
+            return None;
+        }
+    }
+    if !metadata.is_file() {
         return None;
     }
 
@@ -545,17 +501,21 @@ pub fn read_world_snapshot(root: &Path, configs: &[ReaderConfig]) -> WorldSnapsh
         };
     };
 
-    let KanbanRead { tasks, partial, errors } = read;
+    let KanbanRead {
+        tasks,
+        partial,
+        errors,
+    } = read;
     merge_agent_activity(&mut agents, tasks.iter().cloned());
     merge_runtime_sessions(&mut agents, configs, deadline);
     for agent in &mut agents {
-        if agent.task_phase == "live_run" {
-            if let Some(proof) = agent.evidence.iter().find(|e| e.source == "kanban-task") {
-                agent.source = proof.source.clone();
-                agent.confidence = proof.confidence.clone();
-                agent.last_evidence_at = proof.observed_at.clone();
-                agent.age_seconds = proof.age_seconds;
-            }
+        if agent.task_phase == "live_run"
+            && let Some(proof) = agent.evidence.iter().find(|e| e.source == "kanban-task")
+        {
+            agent.source = proof.source.clone();
+            agent.confidence = proof.confidence.clone();
+            agent.last_evidence_at = proof.observed_at.clone();
+            agent.age_seconds = proof.age_seconds;
         }
     }
     if partial {
@@ -927,7 +887,14 @@ fn read_kanban_tasks(root: &Path, deadline: Instant) -> Option<KanbanRead> {
     let mut partial = discovery_partial;
     let mut errors = Vec::new();
     if discovery_partial {
-        errors.push(SourceEvidence { source: "kanban:discovery".into(), status: "unavailable".into(), observed_at: None, age_seconds: None, confidence: "unknown".into(), error_code: Some("discovery_incomplete".into()) });
+        errors.push(SourceEvidence {
+            source: "kanban:discovery".into(),
+            status: "unavailable".into(),
+            observed_at: None,
+            age_seconds: None,
+            confidence: "unknown".into(),
+            error_code: Some("discovery_incomplete".into()),
+        });
     }
     for (board_slug, database) in databases {
         #[derive(Deserialize)]
@@ -1004,13 +971,22 @@ fn read_kanban_tasks(root: &Path, deadline: Instant) -> Option<KanbanRead> {
         tasks.truncate(MAX_KANBAN_ROWS);
         partial = true;
     }
-    Some(KanbanRead { tasks, partial, errors })
+    Some(KanbanRead {
+        tasks,
+        partial,
+        errors,
+    })
 }
 
 fn kanban_read_error(board: &str, stage: &str, error: QueryError) -> SourceEvidence {
-    SourceEvidence { source: format!("kanban:{board}"), status: "unavailable".into(),
-        observed_at: None, age_seconds: None, confidence: "unknown".into(),
-        error_code: Some(format!("{stage}_{}", error.code())) }
+    SourceEvidence {
+        source: format!("kanban:{board}"),
+        status: "unavailable".into(),
+        observed_at: None,
+        age_seconds: None,
+        confidence: "unknown".into(),
+        error_code: Some(format!("{stage}_{}", error.code())),
+    }
 }
 
 pub fn read_kanban_snapshot(root: &Path) -> KanbanSnapshotDto {
@@ -1058,21 +1034,34 @@ fn resolve_kanban_databases(root: &Path) -> (Vec<(String, PathBuf)>, bool) {
         ));
     }
     match std::fs::read_dir(root.join("kanban/boards")) {
-      Ok(entries) => {
-        let mut entries = entries.take(MAX_KANBAN_BOARD_ENTRIES + 1).enumerate().filter_map(|(index, entry)| {
-            if index == MAX_KANBAN_BOARD_ENTRIES { partial = true; return None; }
-            match entry { Ok(entry) => Some(entry), Err(_) => { partial = true; None } }
-        }).collect::<Vec<_>>();
-        entries.sort_by_key(|entry| entry.file_name());
-        for entry in entries {
-            let board = entry.file_name().to_string_lossy().into_owned();
-            if valid_profile_slug(&board) {
-                candidates.push((board, entry.path().join("kanban.db")));
+        Ok(entries) => {
+            let mut entries = entries
+                .take(MAX_KANBAN_BOARD_ENTRIES + 1)
+                .enumerate()
+                .filter_map(|(index, entry)| {
+                    if index == MAX_KANBAN_BOARD_ENTRIES {
+                        partial = true;
+                        return None;
+                    }
+                    match entry {
+                        Ok(entry) => Some(entry),
+                        Err(_) => {
+                            partial = true;
+                            None
+                        }
+                    }
+                })
+                .collect::<Vec<_>>();
+            entries.sort_by_key(|entry| entry.file_name());
+            for entry in entries {
+                let board = entry.file_name().to_string_lossy().into_owned();
+                if valid_profile_slug(&board) {
+                    candidates.push((board, entry.path().join("kanban.db")));
+                }
             }
         }
-      },
-      Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
-      Err(_) => partial = true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
+        Err(_) => partial = true,
     }
     candidates.push(("current".to_owned(), root.join("kanban/current/kanban.db")));
     candidates.push(("default".to_owned(), root.join("kanban.db")));
@@ -1085,14 +1074,21 @@ fn resolve_kanban_databases(root: &Path) -> (Vec<(String, PathBuf)>, bool) {
     for (board, candidate) in candidates {
         if let Some(canonical) = canonicalize_kanban_database(root, &canonical_root, &candidate) {
             if seen.insert(canonical.clone()) {
-                if databases.len() == MAX_KANBAN_BOARDS { partial = true; }
-                else { databases.push((board, canonical)); }
+                if databases.len() == MAX_KANBAN_BOARDS {
+                    partial = true;
+                } else {
+                    databases.push((board, canonical));
+                }
             }
         } else {
             // Optional absent defaults are normal. Existing rejected candidates or
             // permission failures must not silently masquerade as complete reads.
             match candidate.symlink_metadata() {
-                Err(e) if matches!(e.kind(), std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory) => (),
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        std::io::ErrorKind::NotFound | std::io::ErrorKind::NotADirectory
+                    ) => {}
                 _ => partial = true,
             }
         }
@@ -1197,6 +1193,13 @@ impl HeartbeatReader {
         let root = open_directory_no_symlinks(&self.config.state_root)?;
         let mut file = open_heartbeat_at(&root)?;
         let metadata = file.metadata().map_err(|_| ReadError::ReadFailed)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            if metadata.nlink() != 1 {
+                return Err(ReadError::NotRegular);
+            }
+        }
         if !metadata.is_file() {
             return Err(ReadError::NotRegular);
         }
@@ -1261,7 +1264,10 @@ pub(crate) fn open_directory_no_symlinks(path: &Path) -> Result<File, ReadError>
 }
 
 #[cfg(unix)]
-fn directory_entry_names(directory: &File) -> std::io::Result<Vec<std::ffi::OsString>> {
+fn directory_entry_names(
+    directory: &File,
+    deadline: Instant,
+) -> std::io::Result<Vec<std::ffi::OsString>> {
     use std::ffi::{CStr, OsString};
     use std::os::fd::AsRawFd;
     use std::os::unix::ffi::OsStringExt;
@@ -1278,8 +1284,24 @@ fn directory_entry_names(directory: &File) -> std::io::Result<Vec<std::ffi::OsSt
 
     let mut names = Vec::new();
     loop {
+        if names.len() >= 1024 || Instant::now() >= deadline {
+            unsafe { libc::closedir(stream) };
+            return Err(std::io::Error::other("registry_budget"));
+        }
+        #[cfg(target_os = "macos")]
+        let errno = unsafe { libc::__error() };
+        #[cfg(not(target_os = "macos"))]
+        let errno = unsafe { libc::__errno_location() };
+        unsafe {
+            *errno = 0;
+        }
         let entry = unsafe { libc::readdir(stream) };
         if entry.is_null() {
+            let code = unsafe { *errno };
+            if code != 0 {
+                unsafe { libc::closedir(stream) };
+                return Err(std::io::Error::from_raw_os_error(code));
+            }
             break;
         }
         let bytes = unsafe { CStr::from_ptr((*entry).d_name.as_ptr()) }.to_bytes();

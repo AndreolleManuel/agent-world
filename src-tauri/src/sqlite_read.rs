@@ -5,6 +5,8 @@ use rusqlite::{
     limits::Limit,
     types::ValueRef,
 };
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
 use std::{
     fs::File,
     io::{self, Write},
@@ -41,7 +43,7 @@ impl QueryError {
 fn identity(file: &File) -> Option<(u64, u64)> {
     use std::os::unix::fs::MetadataExt;
     let m = file.metadata().ok()?;
-    m.is_file().then_some((m.dev(), m.ino()))
+    (m.is_file() && m.nlink() == 1).then_some((m.dev(), m.ino()))
 }
 
 #[cfg(not(unix))]
@@ -81,7 +83,7 @@ pub fn query(path: &Path, sql: &str, cap: usize, deadline: Instant) -> Result<Ve
         let mut sidecar = path.as_os_str().to_os_string();
         sidecar.push(suffix);
         match std::fs::symlink_metadata(&sidecar) {
-            Ok(m) if m.file_type().is_symlink() || !m.is_file() => {
+            Ok(m) if m.file_type().is_symlink() || !m.is_file() || m.nlink() != 1 => {
                 return Err(QueryError::Unavailable);
             }
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
@@ -145,7 +147,7 @@ fn read_rows(path: &Path, sql: &str, cap: usize, end: Instant) -> Result<Vec<u8>
     connection
         .set_limit(
             Limit::SQLITE_LIMIT_LENGTH,
-            cap.max(64 * 1024).min(1024 * 1024) as i32,
+            cap.clamp(64 * 1024, 1024 * 1024) as i32,
         )
         .map_err(classify_error)?;
     connection

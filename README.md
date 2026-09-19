@@ -1,77 +1,48 @@
 # AM Labs · Agent World
 
-Un laboratoire pixel-art pour voir vivre vos agents Hermes : activité, attente, blocages et tâches, depuis votre Mac ou votre VPS. Un projet gratuit et open source porté par [AM Labs](https://amlabs.dev). Ce n'est pas un outil de pilotage : il n'envoie aucune tâche aux agents.
+Un laboratoire pixel-art pour observer l’activité de ses agents Hermes sur Mac : travail confirmé, attente, blocages et absence de preuve. Gratuit et open source, sous licence MIT. Créé par [AM Labs](https://amlabs.dev).
 
-**[Télécharger pour Mac — bêta](https://github.com/AndreolleManuel/agent-world/releases/tag/v0.1.0-beta.1)** · Intel et Apple Silicon · **non notarisée par Apple**
+**0.2.0 — candidat de test pour développeurs.** Cette version remplace l’ancien accès SSH général par un lecteur dédié et un export limité. Les anciennes archives 0.1.x ne bénéficient pas de ces protections. Le candidat 0.2.0 n’est pas encore une release publique ni une version notarisée.
 
-[Installation Mac](docs/INSTALLATION.md) · [Données et confidentialité](docs/PRIVACY.md) · [Contribuer](CONTRIBUTING.md) · [Sécurité](SECURITY.md)
+[Installer / compiler](docs/INSTALLATION.md) · [Préparer un VPS](docs/VPS.md) · [Confidentialité](docs/PRIVACY.md) · [Sécurité](docs/SECURITY.md) · [Validation](docs/VALIDATION-0.2.0.md) · [Contribuer](CONTRIBUTING.md)
 
-![Agent World : agents au travail dans le laboratoire et en pause dans le salon](docs/screenshots/agent-world-demo.png)
+![Agent World, capture du mode démo](docs/screenshots/agent-world-demo.png)
 
-Capture réelle du mode démo : données simulées, aucune conversation ni donnée privée publiée. Les animations illustrent les états observés ; les occupations de pause sont décoratives.
+La capture utilise des données simulées. Les bulles et occupations sont décoratives ; les statuts proviennent des preuves Hermes. L’app ne commande pas les agents.
 
-## Vos agents restent chez vous
+## Données et accès
 
-Agent World affiche les métadonnées Hermes sans les transmettre à AM Labs. Aucun compte AM Labs, suivi d'usage ou rapport de plantage automatique n'est intégré. En mode local, la collecte lit les fichiers sur le Mac ; en mode VPS, les métadonnées arrivent directement du serveur par SSH.
+- Pas de compte AM Labs, télémétrie produit, rapport de plantage automatique ni relais cloud.
+- Sur Mac : consentement natif pour la source ; collecte dans un processus isolé, sans réseau ni écriture dans Hermes. Les noms locaux restent visibles ; les titres sont masqués.
+- Sur VPS : export de profils explicitement choisis par l’administrateur ; identifiants opaques, noms génériques et titres masqués par défaut. Les alias saisis dans l’app restent sur le Mac.
+- Le compte `aw-view` n’a accès qu’au snapshot publié. Sa clé dédiée ne donne ni shell, ni commande libre, ni transfert de fichiers, ni tunnel. L’app ne sait plus installer de logiciel sur le serveur.
+- SSH chiffre la connexion directe. Clé privée Ed25519 chiffrée obligatoire ; Apple OpenSSH utilise le trousseau sans l’agent SSH général. L’empreinte serveur doit être vérifiée séparément.
 
-L'app lit notamment les noms, états et titres de tâches/sessions, pas les corps des conversations. Ces titres peuvent contenir des informations sensibles : vérifiez vos captures avant de les partager. Connexions et avatars sont enregistrés localement ; l'installation d'un collecteur VPS demande un accord explicite. Consultez la [fiche de confidentialité](docs/PRIVACY.md) pour les données conservées, les écritures possibles et les liens externes. Ces mécanismes ne constituent pas une certification de sécurité.
+Le processus d’export lit des bases qui peuvent aussi contenir des données privées : il demeure un composant de confiance. Un OS ou administrateur compromis dépasse ces protections. La sélection d’avatars ne définit pas les permissions du serveur. Voir le [modèle de sécurité](docs/SECURITY.md).
 
-## Bêta Mac et installation
+## Fonctionnement
 
-Le parcours de bêta vise une app universelle Intel/Apple Silicon, macOS 12.3+, avec collecteurs Linux x86_64/ARM64 embarqués : aucun Rust/Cargo à installer par l'utilisateur. Le configurateur vérifie le serveur et propose une installation SSH uniquement après consentement. Le diagnostic partageable exclut adresses, clés et données d'agents.
+Une source à la fois, 256 agents maximum et 512 cartes dans le protocole. La scène a dix places de travail et dix de repos ; les autres agents restent consultables dans Équipe. Actualisation toutes les cinq secondes, erreurs et données périmées explicites, journal en mémoire limité à cent événements. Un agent disponible peut conserver son poste 90 secondes après une activité confirmée sans falsifier son état.
 
-La distribution est **gratuite, non notarisée**, sans abonnement Apple. Voir le [guide d'installation](docs/INSTALLATION.md), la [préparation de bêta](docs/BETA-MAC.md) et le [parcours GitHub Releases](docs/PUBLICATION.md). Le workflow manuel produit des artefacts de test, sans publier de release. **Sa présence ne signifie pas que les tests Linux ou la compatibilité Mac ont été validés.** L'installation sur un VPS réel, le Mac Intel et la version minimale de macOS restent à valider : cette première version est une bêta de test, pas une version stable certifiée.
+## Développement sur Mac
 
-## Fonctionnement actuel
+Node.js 22+, Rust 1.98.0 et outils Xcode. Les fichiers lock sont versionnés ; SQLite est embarqué. Les tests utilisent aussi `sqlite3`.
 
-- Détection du profil par défaut et des profils nommés d'une racine Hermes configurable ; sélection des agents et de leurs avatars dans un accueil illustré.
-- Choix Mac/VPS dans le configurateur. Le mode distant utilise un collecteur autonome via SSH vérifié, sans relais AM Labs ni port HTTP public. Une seule source à la fois ; installation intégrée si les binaires vérifiés sont inclus dans la build, sinon alternative depuis les sources. Voir le [guide VPS](docs/VPS.md).
-- Lecture des heartbeats, des métadonnées de sessions et des boards Kanban SQLite. Run confirmé, session active, attente, revue, blocage et absence de preuve sont distingués. La fraîcheur du gateway ne prouve pas à elle seule un travail en cours.
-- Dix places dans le laboratoire et dix à droite dans la salle de pause. Les occupations de pause sont décoratives, pas des actions Hermes. Au-delà de la capacité d'une zone, une notice et le panneau Équipe donnent accès aux agents hors scène.
-- Monde adapté à la hauteur disponible ; Équipe, Kanban et Journal dans un panneau superposé, fermé par défaut. Fermeture par bouton, Échap ou fond du dialogue, défilement interne. Filtres de recherche, board, statut, assignation et cartes prêtes non assignées.
-- Collecte périodique bornée côté SQLite, hors du thread UI. En cas d'échec, les dernières données restent identifiées comme anciennes et les animations s'arrêtent. Le journal garde au plus cent changements observés depuis l'ouverture, sans historique persistant.
-- Correspondances d'avatars et sélection conservées localement ; chemin de source sauvegardé dans la configuration de l'application. Aucun compte cloud ni télémétrie produit.
-
-## Développement macOS
-
-Prérequis : Node.js/npm, Rust stable et outils de développement macOS nécessaires à Tauri. SQLite est embarqué dans l'application (`rusqlite` 0.40.2 / SQLite 3.53.2) : aucun outil SQLite à installer pour l'utilisateur. Les tests macOS emploient encore `/usr/bin/sqlite3` comme écrivain externe de bases jetables.
-
-```bash
+```sh
 npm ci
-npm test
 npm run lint
-npm run build
-cargo test --manifest-path src-tauri/Cargo.toml
+npm test
+npm run test:release
+cargo test --locked --manifest-path src-tauri/Cargo.toml
 npm run tauri dev
 ```
 
-`npm run tauri dev` démarre Vite sur `127.0.0.1:1420` et la fenêtre native. `Ctrl-C` arrête le processus de développement. Le navigateur seul ne dispose pas du collecteur IPC natif.
+Démo navigateur : `npm run dev`, puis `http://127.0.0.1:1420/?fixture=1`. Scénarios mixte, dix actifs/en pause/sans preuve, quarante ou 256 agents, registre vide et erreur. Aucune lecture Hermes en mode démo. Ces routes sont exclues de la production.
 
-Routes de vérification réservées au développement :
+Build : `npm run build:beta -- --bundles app`, puis `npm run package:beta`. Produit un bundle universel signé ad hoc, **non notarisé**. La compilation Intel et le minimum déclaré macOS 12.3 ne valent pas validation sur ces machines. Les parcours réellement essayés et limites sont dans le [rapport](docs/VALIDATION-0.2.0.md).
 
-- `/?fixture=1` : scénarios simulés (dix actifs, dix en pause, absence de preuve, surcharge, erreur) ; aucune lecture Hermes.
-- `/?layout=1` : atelier de placement manuel, brouillon local indépendant. L'export JSON ne modifie pas automatiquement le monde et ne certifie pas les collisions.
+## Contributions et licence
 
-Diagnostic optionnel, avec une racine absolue choisie explicitement :
+[MIT](LICENSE), copyright © 2026 Manuel Andreolle. Utilisation, modification et redistribution, y compris commerciale, avec les mentions de licence. Les dépendances conservent leurs licences ; notices complètes et sources MPL non modifiées accompagnent la distribution. Le mainteneur atteste avoir créé les visuels pour ce projet, sans pack tiers déclaré ; aucune exclusivité n’est revendiquée sur les éléments purement générés par IA. Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-```bash
-cargo run --manifest-path src-tauri/Cargo.toml --example inspect_world -- /chemin/absolu/vers/hermes
-```
-
-Cinq lectures ponctuelles par défaut ; arguments optionnels après la racine : nombre de lectures (1–60), intervalle en millisecondes (0–1000). Sortie limitée aux comptes, durées et codes d'état par source, sans titres ni conversations.
-
-## Architecture et limites
-
-L'app utilise Tauri 2, React/TypeScript et PixiJS. `src/App.tsx` orchestre la collecte et les panneaux ; `src/world/` contient placement, navigation et rendu ; `src-tauri/src/heartbeat.rs` fusionne les preuves ; `sqlite_read.rs` encadre le moteur SQLite embarqué en lecture seule. Le [modèle de sécurité](docs/SECURITY.md) décrit les garanties et les limites du lecteur et du transport SSH.
-
-Le défaut d'ouverture des bases WAL fermées avec le SQLite macOS a été reproduit puis corrigé par l'emploi du moteur embarqué ; les erreurs réelles restent explicites. Restent notamment l'évitement entre agents mobiles, la collision de leur silhouette complète, une recette visuelle automatisée et la consolidation du configurateur multi-source. Les tests de trajets ne prouvent pas une animation sans aucun chevauchement. Le bundle principal dépasse encore le seuil d'avertissement Vite de 500 kB.
-
-Le téléchargement est un ZIP universel signé ad-hoc. Developer ID et notarisation ne sont pas utilisés dans ce parcours gratuit. La recette multi-machines reste à compléter. Les mises à jour de l'app sont manuelles ; les limites et vérifications propres à chaque build figurent dans ses notes de release et `BUILD-STATUS.json`.
-
-## Licence et contributions
-
-Décision de publication : code source sous **MIT**, permettant utilisation, modification et redistribution, y compris commerciale, avec conservation des mentions de licence et de copyright. Il n'y a pas de restriction publicitaire ni d'interdiction de revente ajoutée à cette licence. La présence d'AM Labs dans la version officielle n'oblige pas les versions dérivées à conserver ce décor.
-
-Voir [LICENSE](LICENSE) — Copyright © 2026 Manuel Andreolle — et [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Le mainteneur atteste avoir créé les visuels pour ce projet, sans pack tiers déclaré. La licence ne concède que les droits détenus par les contributeurs, sans revendication de droits exclusifs sur des éléments purement générés par IA. Les dépendances gardent leurs licences et notices ; les sources MPL non modifiées sont fournies avec l'app.
-
-Les retours et améliorations sont bienvenus : voir [CONTRIBUTING.md](CONTRIBUTING.md). Créé et maintenu par [AM Labs](https://amlabs.dev) — applications métier et automatisations sur mesure.
+GitHub facilite la lecture du code et la contribution ; un dépôt public ne réserve pas l’utilisation aux développeurs. Ce public est visé par la documentation et les prérequis, sans contrôle d’accès artificiel.

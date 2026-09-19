@@ -4,10 +4,10 @@ import { DEV_WORLD_FIXTURE } from './devFixture';
 import type { WorldSnapshotDto } from './heartbeat';
 
 export function scenarioWorld(scenario: string): WorldSnapshotDto {
-  const count = scenario === 'crowded' ? 40 : scenario === 'pause' || scenario === 'work' || scenario === 'unknown' ? 10 : scenario === 'empty' ? 0 : 12;
+  const count = scenario === 'limit' ? 256 : scenario === 'crowded' ? 40 : scenario === 'pause' || scenario === 'work' || scenario === 'unknown' ? 10 : scenario === 'empty' ? 0 : 12;
   const agents = Array.from({ length: count }, (_, i) => {
     const base = DEV_WORLD_FIXTURE.agents[i % DEV_WORLD_FIXTURE.agents.length];
-    const phase = scenario === 'unknown' ? 'telemetry_unavailable' : scenario === 'pause' ? 'available' : scenario === 'work' || scenario === 'crowded' ? 'live_run'
+    const phase = scenario === 'unknown' ? 'telemetry_unavailable' : scenario === 'pause' ? 'available' : ['work', 'crowded', 'limit'].includes(scenario) ? 'live_run'
       : scenario === 'statuses' ? ['live_run', 'live_session', 'review_pending', 'blocked', 'available', 'telemetry_unavailable'][i % 6] : base.task_phase;
     return { ...base, agent_id: `fixture-${i + 1}`, profile: `fixture-${i + 1}`, display_name: i < 12 ? base.display_name : `Agent ${i + 1}`,
       task_phase: phase, observed_state: phase === 'telemetry_unavailable' ? 'unavailable' as const : 'connected' as const,
@@ -37,6 +37,7 @@ export default function FixtureLab() {
   return <div className="fixture-shell"><div className="fixture-toolbar"><label>Scénario de vérification <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
     <option value="mixed">Mixte</option><option value="work">10 au travail</option><option value="pause">10 en pause</option><option value="unknown">10 sans télémétrie</option>
     <option value="crowded">40 actifs · capacité dépassée</option><option value="statuses">États mélangés</option>
+    <option value="limit">256 agents · limite du protocole</option>
     <option value="empty">Registre vide</option><option value="error">Lecture en échec</option>
   </select></label><span>Développement uniquement · changer de scénario teste aussi les trajets</span><a href="/">Revenir aux données locales</a></div>
     <App loadWorldSnapshot={load} dataMode="fixture" /></div>;

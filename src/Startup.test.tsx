@@ -35,23 +35,17 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('visual Hermes onboarding', () => {
-  it('serializes VPS detection and diagnostics until the current operation finishes', async () => {
+  it('serializes VPS discovery and does not expose remote administration', async () => {
     render(<Startup />); await screen.findByRole('checkbox', { name: 'Florence' });
     fireEvent.click(screen.getByRole('button', { name: /Sur un VPS/ }));
     fireEvent.change(screen.getByLabelText('Serveur VPS'), { target: { value: 'fixture.invalid' } });
-    fireEvent.change(screen.getByLabelText('Utilisateur SSH'), { target: { value: 'hermes' } });
     let finish!: (value: unknown) => void;
     invokeMock.mockImplementationOnce(() => new Promise((done) => { finish = done; }));
+    fireEvent.change(screen.getByLabelText('Clé dédiée sur ce Mac'), { target: { value: '/fixture/viewer-key' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tester le VPS' }));
-    expect(screen.getByRole('button', { name: 'Vérifier mon serveur' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Vérifier mon serveur' }));
-    expect(invokeMock.mock.calls.some(([c]) => c === 'diagnose_remote')).toBe(false);
-    await act(async () => finish({ root: '/fixture/remote', remote: { host: 'fixture.invalid', user: 'hermes', port: 22, root: '/fixture/remote', identityFile: null }, agents: [{ agent_id: 'r', display_name: 'Distant' }] }));
-    invokeMock.mockImplementationOnce(() => new Promise((done) => { finish = done; }));
-    fireEvent.click(screen.getByRole('button', { name: 'Vérifier mon serveur' }));
-    expect(screen.getByRole('button', { name: 'Ouvrir mon laboratoire · 1 agents' })).toBeDisabled();
-    expect(screen.getByLabelText('Serveur VPS')).toBeDisabled();
-    await act(async () => finish({ appVersion: '0.1.0', platform: 'linux', architecture: 'x86_64', checks: [], canInstall: false }));
+    expect(screen.getByRole('button', { name: /Connexion et détection/ })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Installer|Vérifier mon serveur/ })).not.toBeInTheDocument();
+    await act(async () => finish({ root: '/export', remote: { host: 'fixture.invalid', user: 'aw-view', port: 22, root: '/export', identityFile: '/fixture/key' }, agents: [{ agent_id: 'r', display_name: 'Distant' }] }));
     expect(screen.getByRole('button', { name: 'Ouvrir mon laboratoire · 1 agents' })).toBeEnabled();
   });
 
@@ -93,6 +87,7 @@ describe('visual Hermes onboarding', () => {
     fireEvent.change(screen.getByLabelText('Utilisateur SSH'), { target: { value: 'hermes' } });
     const source = { host: 'example.invalid', user: 'hermes', port: 22, identityFile: null, root: '/home/hermes/.hermes' };
     invokeMock.mockResolvedValueOnce({ root: source.root, sourceId: 'ssh:fixture', remote: source, agents: [{ agent_id: 'remote-agent', display_name: 'Distant', observed_state: 'connected' }] });
+    fireEvent.change(screen.getByLabelText('Clé dédiée sur ce Mac'), { target: { value: '/fixture/viewer-key' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tester le VPS' }));
     expect(await screen.findByRole('checkbox', { name: 'Distant' })).toBeChecked();
     fireEvent.click(screen.getByRole('button', { name: 'Ouvrir mon laboratoire · 1 agents' }));
@@ -107,6 +102,7 @@ describe('visual Hermes onboarding', () => {
     fireEvent.change(screen.getByLabelText('Serveur VPS'), { target: { value: 'example.invalid' } });
     fireEvent.change(screen.getByLabelText('Utilisateur SSH'), { target: { value: 'hermes' } });
     invokeMock.mockRejectedValueOnce('ssh_host_untrusted');
+    fireEvent.change(screen.getByLabelText('Clé dédiée sur ce Mac'), { target: { value: '/fixture/viewer-key' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tester le VPS' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('empreinte');
     expect(screen.queryByRole('button', { name: /Ouvrir mon laboratoire/ })).not.toBeInTheDocument();
@@ -119,6 +115,7 @@ describe('visual Hermes onboarding', () => {
     fireEvent.change(screen.getByLabelText('Utilisateur SSH'), { target: { value: 'hermes' } });
     let resolve!: (value: unknown) => void;
     invokeMock.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    fireEvent.change(screen.getByLabelText('Clé dédiée sur ce Mac'), { target: { value: '/fixture/viewer-key' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tester le VPS' }));
     fireEvent.click(screen.getByRole('button', { name: /Sur ce Mac/ }));
     await act(async () => resolve({ root: '/remote', remote: {}, agents: [{ agent_id: 'x', display_name: 'Trop tard' }] }));

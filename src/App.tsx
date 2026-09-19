@@ -1,3 +1,4 @@
+import { own, dictionary } from './records';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -15,7 +16,9 @@ import { visualPhaseForAgent } from './heartbeat';
 import {
   phasePresentation,
   placementFor,
+  reconcileDeskPresence,
   reconcilePhaseSlots,
+  type DeskPresence,
   type PhaseSlotAssignments,
   type SpritePoint,
   type WorldScene,
@@ -93,6 +96,7 @@ function App(props: AppProps) {
   const [collection, setCollection] = useState<{ at: string; ms: number } | null>(null);
   const [clock, setClock] = useState(Date.now());
   const [mode, setMode] = useState('agents');
+  const [sceneExpanded, setSceneExpanded] = useState(false);
   const [kanbanOpen, setKanbanOpen] = useState(false);
   const [readyOnly, setReadyOnly] = useState(false);
   const evidencePanelRef = useRef<HTMLElement>(null);
@@ -106,13 +110,14 @@ function App(props: AppProps) {
   const inFlightRef = useRef<Promise<void> | null>(null);
   const positionsRef = useRef<Record<string, SpritePoint>>({});
   const phaseSlotsRef = useRef<PhaseSlotAssignments>({});
+  const deskPresenceRef = useRef<DeskPresence>({});
   const initializedRef = useRef(false);
 
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback((manual = false) => {
+    // Background polling stays visually quiet; a manual click can join it.
+    if (manual) setRefreshing(true);
     if (inFlightRef.current) return inFlightRef.current;
-
-    setRefreshing(true);
     const read = loadWorldSnapshot
       ? loadWorldSnapshot().then(({ agents: nextAgents, kanban: nextKanban, collected_at, collection_ms }) => [
         nextAgents,
@@ -124,26 +129,32 @@ function App(props: AppProps) {
       .then(([nextAgents, nextKanban, metadata]) => {
         if (!mountedRef.current) return;
         const previousPositions = positionsRef.current;
-        const nextPositions: Record<string, SpritePoint> = {};
-        const nextMotions: Record<string, AgentMotion> = {};
+        const nextPositions = dictionary<SpritePoint>();
+        const nextMotions = dictionary<AgentMotion>();
 
         const initialPopulation = !initializedRef.current;
+        const readAt = Date.now();
         const visualAgents = nextAgents.map((agent) => ({
           agent_id: agent.agent_id,
           task_phase: visualPhaseForAgent(agent),
         }));
-        const nextPhaseSlots = reconcilePhaseSlots(phaseSlotsRef.current, visualAgents);
+        const nextDeskPresence = reconcileDeskPresence(deskPresenceRef.current, visualAgents, readAt);
+        const placementAgents = visualAgents.map((agent) => ({
+          ...agent,
+          task_phase: nextDeskPresence[agent.agent_id]?.phase ?? agent.task_phase,
+        }));
+        const nextPhaseSlots = reconcilePhaseSlots(phaseSlotsRef.current, placementAgents);
 
         for (const agent of nextAgents) {
-          const visualPhase = visualPhaseForAgent(agent);
+          const placementPhase = nextPhaseSlots[agent.agent_id].phase;
           const slotIndex = nextPhaseSlots[agent.agent_id].slotIndex;
           const placement = placementFor(
             agent.agent_id,
-            visualPhase,
-            worldSceneForPhase(visualPhase),
+            placementPhase,
+            worldSceneForPhase(placementPhase),
             slotIndex,
           );
-          const previous = previousPositions[agent.agent_id];
+          const previous = own(previousPositions, agent.agent_id);
           const origin = previous ?? (initialPopulation ? placement.destination : placement.start);
           const moving = pointsDiffer(origin, placement.destination);
           nextPositions[agent.agent_id] = placement.destination;
@@ -152,18 +163,19 @@ function App(props: AppProps) {
             destination: placement.destination,
             moving,
             slotIndex,
+            placementPhase,
           };
 
         }
 
         positionsRef.current = nextPositions;
         phaseSlotsRef.current = nextPhaseSlots;
+        deskPresenceRef.current = nextDeskPresence;
         initializedRef.current = true;
         setSpriteMotions(nextMotions);
         setAgents(nextAgents);
         setKanban(nextKanban);
         setCollection(metadata?.at && typeof metadata.ms === 'number' ? { at: metadata.at, ms: metadata.ms } : null);
-        const readAt = Date.now();
         setLastSuccessfulRead(readAt); setClock(readAt);
         const changes = observedChanges(previousAgents.current, nextAgents, readAt, initialPopulation);
         setMotionBlocked((old) => Object.fromEntries(Object.entries(old).filter(([id]) => nextAgents.some((a) => a.agent_id === id))));
@@ -217,14 +229,27 @@ function App(props: AppProps) {
     };
   }, [refresh, refreshIntervalMs]);
 
+  useEffect(() => {
+    if (!sceneExpanded) return;
+    const collapse = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !kanbanOpen && !selectedId) setSceneExpanded(false);
+    };
+    window.addEventListener('keydown', collapse);
+    return () => window.removeEventListener('keydown', collapse);
+  }, [sceneExpanded, kanbanOpen, selectedId]);
+
   const elapsed = lastSuccessfulRead === null ? 0 : Math.max(0, Math.floor((clock - lastSuccessfulRead) / 1000));
   const stale = lastSuccessfulRead !== null && elapsed >= Math.max(15, refreshIntervalMs * 3 / 1000);
   const agedAgents = agents.map((a) => ageEvidence(a, elapsed, stale));
-  const overflowIds = new Set(agents.filter((a) => placementFor(a.agent_id, visualPhaseForAgent(a), worldSceneForPhase(visualPhaseForAgent(a)), spriteMotions[a.agent_id]?.slotIndex).overflow).map((a) => a.agent_id));
+  const overflowIds = new Set(agents.filter((agent) => {
+    const motion = own(spriteMotions, agent.agent_id);
+    const placementPhase = motion?.placementPhase ?? visualPhaseForAgent(agent);
+    return placementFor(agent.agent_id, placementPhase, worldSceneForPhase(placementPhase), motion?.slotIndex).overflow;
+  }).map((agent) => agent.agent_id));
   const onMotionEnd = useCallback((id: string, destination: SpritePoint, blocked: boolean) => {
     setMotionBlocked((old) => ({ ...old, [id]: blocked }));
     setSpriteMotions((old) => {
-      if (!old[id] || pointsDiffer(old[id].destination, destination) || !old[id].moving) return old;
+      if (!own(old, id) || pointsDiffer(old[id].destination, destination) || !old[id].moving) return old;
       return { ...old, [id]: { ...old[id], moving: false } };
     });
   }, []);
@@ -247,7 +272,7 @@ function App(props: AppProps) {
   const refreshSeconds = Math.max(0.1, refreshIntervalMs / 1_000);
 
   return (
-    <main className="control-room">
+    <main className={`control-room${sceneExpanded ? ' scene-expanded' : ''}`}>
       <header className="room-header">
         <div>
           <p className="eyebrow">AM Labs · supervision locale en lecture seule</p>
@@ -270,8 +295,11 @@ function App(props: AppProps) {
             type="button"
             disabled={refreshing}
             aria-busy={refreshing}
-            onClick={() => void refresh()}
+            onClick={() => void refresh(true)}
           >
+            <svg className="refresh-icon" aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17" />
+            </svg>
             {failed ? 'Réessayer' : 'Actualiser'}
           </button>
         </div>
@@ -421,7 +449,9 @@ function App(props: AppProps) {
         <button onClick={() => showFilter('all')} aria-haspopup="dialog">Équipe · {agents.length}</button>
         <button onClick={openKanban} aria-haspopup="dialog">Kanban · {kanban.tasks.length}</button>
         <button onClick={() => { setMode('events'); setKanbanOpen(true); }} aria-haspopup="dialog">Journal · {events.length}</button>
-        <span>Le monde reste visible · les détails s’ouvrent à la demande</span>
+        <button className="expand-scene" aria-pressed={sceneExpanded} onClick={() => setSceneExpanded((value) => !value)}>
+          {sceneExpanded ? 'Réduire la scène' : 'Agrandir la scène'}
+        </button>
       </div>
       {kanbanOpen && <KanbanDialog title={mode === 'kanban' ? 'Kanban' : mode === 'events' ? 'Journal' : 'Équipe'} onClose={() => setKanbanOpen(false)}>
         <Supervision agents={agedAgents} kanban={kanban} events={events} mode={mode}
@@ -430,7 +460,7 @@ function App(props: AppProps) {
           onSelect={(id) => { setKanbanOpen(false); setSelectedId(id); }} />
       </KanbanDialog>}
       <footer className="room-footer">
-        <span>La pause est à droite. Café, lecture et jeux sont des occupations décoratives, pas des actions Hermes.</span>
+        <span>Bulles et pauses imaginées pour le décor · les états affichés viennent de Hermes.</span>
         <span>Actualisation bornée · {refreshSeconds.toLocaleString('fr-FR')} s</span>
         <span>Aucune écriture distante</span>
         {props.onConfigure && <button onClick={props.onConfigure}>Configurer mes agents</button>}

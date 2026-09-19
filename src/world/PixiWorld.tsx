@@ -1,3 +1,4 @@
+import { own } from '../records';
 import { useEffect, useRef, useState } from 'react';
 import { visualPhaseForAgent } from '../heartbeat';
 import type { AgentHeartbeatDto, KanbanSnapshotDto } from '../heartbeat';
@@ -145,7 +146,7 @@ function PixiWorld({
   const [nativeProbeOutput, setNativeProbeOutput] = useState<string | null>(null);
   const visualAgentSlots = agents.map((agent) => ({
     agent_id: agent.agent_id,
-    task_phase: visualPhaseForAgent(agent),
+    task_phase: own(motions, agent.agent_id)?.placementPhase ?? visualPhaseForAgent(agent),
   }));
 
   const snapshot: PixiSceneSnapshot = {
@@ -153,16 +154,17 @@ function PixiWorld({
     paused,
     kanban,
     agents: agents.map((agent) => {
-      const motion = motions[agent.agent_id];
+      const motion = own(motions, agent.agent_id);
       const visualPhase = visualPhaseForAgent(agent);
+      const placementPhase = motion?.placementPhase ?? visualPhase;
       const visualAgent = visualPhase === agent.task_phase
         ? agent
         : { ...agent, task_phase: visualPhase };
       const placement = placementFor(
         agent.agent_id,
-        visualPhase,
-        visualPhase === 'available' ? 'break-room' : 'control-room',
-        motion?.slotIndex ?? phaseSlotIndex(agent.agent_id, visualPhase, visualAgentSlots),
+        placementPhase,
+        placementPhase === 'available' ? 'break-room' : 'control-room',
+        motion?.slotIndex ?? phaseSlotIndex(agent.agent_id, placementPhase, visualAgentSlots),
       );
       return {
         agent: visualAgent,
@@ -291,11 +293,12 @@ function PixiWorld({
       <div className="pixi-agent-controls" aria-label="Opérateurs du monde">
         {snapshot.agents.map(({ agent, motion }) => {
           const visualPhase = visualPhaseForAgent(agent);
+          const placementPhase = motion.placementPhase ?? visualPhase;
           const placement = placementFor(
             agent.agent_id,
-            visualPhase,
-            visualPhase === 'available' ? 'break-room' : 'control-room',
-            motion.slotIndex ?? phaseSlotIndex(agent.agent_id, visualPhase, visualAgentSlots),
+            placementPhase,
+            placementPhase === 'available' ? 'break-room' : 'control-room',
+            motion.slotIndex ?? phaseSlotIndex(agent.agent_id, placementPhase, visualAgentSlots),
           );
           return (
             <button

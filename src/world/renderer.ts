@@ -1,3 +1,4 @@
+import { own } from '../records';
 import {
   Application,
   Assets,
@@ -9,7 +10,7 @@ import {
   Texture,
 } from 'pixi.js';
 
-import type { AgentHeartbeatDto, KanbanSnapshotDto, KanbanTaskDto } from '../heartbeat';
+import type { AgentHeartbeatDto, KanbanSnapshotDto } from '../heartbeat';
 import {
   animateDynamicEnvironment,
   buildDynamicEnvironment,
@@ -34,6 +35,7 @@ import { persistentAvatar } from '../preferences';
 import { movementDuration, navigate } from './navigation';
 import { buildNeonSign } from './neon';
 import { initializePixiAssets } from './pixiRuntime';
+import { ambientCues, ambientEligible, bubblePosition, BUBBLE_WIDTH, BUBBLE_HEIGHT, type BubbleRect } from './ambience';
 
 export const AGENT_SEATING_DURATION_MS = 650;
 const RENDERER_PREFERENCES = ['canvas', 'webgl'] as const;
@@ -159,6 +161,8 @@ export interface AgentMotion {
   destination: SpritePoint;
   moving: boolean;
   slotIndex?: number;
+  // Destination only; the model's agent retains its current evidence/status.
+  placementPhase?: string;
 }
 
 export interface PixiAgentModel {
@@ -184,6 +188,7 @@ export interface WorldRenderer {
 }
 
 interface AgentNode {
+  waitingToEnter: boolean;
   queued: boolean;
   routeBlocked: boolean;
   agentId: string;
@@ -205,6 +210,13 @@ interface AgentNode {
   nameLabel: Text;
   symbolBubble: Graphics;
   symbolLabel: Text;
+  chatter: Container;
+  chatterShape: Graphics;
+  chatterHeading: Text;
+  chatterText: Text;
+  chatterDots: Graphics;
+  chatterKey: string;
+  ambientEffects: Graphics;
   route: SpritePoint[];
   startedAt: number;
   destination: SpritePoint;
@@ -287,32 +299,14 @@ const LOUNGE_SEATED_INTERACTIONS = new Set<AgentInteraction>([
   'drinking-coffee',
 ]);
 const LOUNGE_SEATED_SPRITE_Y = -21;
-const CONTINUOUS_INTERACTIONS = new Set<AgentInteraction>([
-  'typing-at-desk',
-  'researching-at-lab',
-  'reading-in-lounge',
-  'playing-handheld',
-  'drinking-coffee',
-  'reading-at-bookshelf',
-  'checking-whiteboard',
-  'watering-plants',
-  'checking-phone',
-  'thinking-at-board',
-  'blocked-at-board',
-  'having-coffee',
-  'cooking-at-counter',
-  'washing-dishes',
-]);
-
 function hasContinuousActivity(node: AgentNode): boolean {
-  return CONTINUOUS_INTERACTIONS.has(node.interaction)
-    && (node.phase === 'available' || node.phase === 'live_run' || node.phase === 'live_session');
+  return ambientEligible(node.phase);
 }
 
 
 
 function phaseStyle(phase: string): { label: string; color: number; symbol?: string } {
-  return PHASE_STYLES[phase] ?? PHASE_STYLES.available;
+  return own(PHASE_STYLES, phase) ?? PHASE_STYLES.telemetry_unavailable;
 }
 
 function shortName(agent: AgentHeartbeatDto): string {
@@ -368,7 +362,7 @@ const KANBAN_COLUMNS = [
 function drawKanban(
   layer: Container,
   snapshot: KanbanSnapshotDto,
-  agents: readonly PixiAgentModel[],
+  _agents: readonly PixiAgentModel[],
 ): void {
   for (const child of [...layer.children]) {
     layer.removeChild(child);
@@ -380,46 +374,22 @@ function drawKanban(
     .stroke({ color: 0x332d42, width: 3 });
   layer.addChild(board);
 
-  const title = makeText(snapshot.tasks.length === 0 ? 'AUCUNE TÂCHE ACTIVE' : 'KANBAN RÉEL', 7, COLORS.ink);
-  title.position.set(736, 66);
+  const title = makeText(`KANBAN · ${snapshot.tasks.length}`, 11, COLORS.ink);
+  title.position.set(736, 72);
   layer.addChild(title);
-
-  const names = new Map(agents.map(({ agent }) => [agent.profile, shortName(agent)]));
-  const columnWidth = 43;
-  KANBAN_COLUMNS.forEach((column, columnIndex) => {
-    const x = 649 + (columnIndex * columnWidth);
-    const header = new Graphics().rect(x, 72, 40, 11).fill(column.color);
-    const headerLabel = makeText(column.label, 5, 0xffffff);
-    headerLabel.position.set(x + 20, 77.5);
-    layer.addChild(header, headerLabel);
-
-    const tasks = snapshot.tasks.filter((task) =>
-      (column.statuses as readonly string[]).includes(task.status));
-    tasks.slice(0, 4).forEach((task: KanbanTaskDto, row) => {
-      const y = 86 + (row * 19);
-      const card = new Graphics()
-        .roundRect(x + 1, y, 38, 16, 2)
-        .fill({ color: column.color, alpha: 0.22 })
-        .stroke({ color: column.color, width: 1 });
-      const assignee = task.assignee ? (names.get(task.assignee) ?? task.assignee) : 'Libre';
-      const cardLabel = makeText(assignee.slice(0, 8), 5, COLORS.ink);
-      cardLabel.position.set(x + 20, y + 5);
-      const boardLabel = makeText(task.board_slug.slice(0, 8), 4, 0x625b6e);
-      boardLabel.position.set(x + 20, y + 11);
-      layer.addChild(card, cardLabel, boardLabel);
-    });
-    if (tasks.length > 4) {
-      const overflow = makeText(`+${tasks.length - 4}`, 5, COLORS.ink);
-      overflow.position.set(x + 34, 166);
-      layer.addChild(overflow);
-    }
+  KANBAN_COLUMNS.forEach((column, index) => {
+    const x = 650 + index * 44;
+    const count = snapshot.tasks.filter((task) => (column.statuses as readonly string[]).includes(task.status)).length;
+    const card = new Graphics().roundRect(x, 86, 40, 57, 3).fill({ color: column.color, alpha: 0.18 });
+    const label = makeText(column.label, 7, COLORS.ink);
+    label.position.set(x + 20, 98);
+    const total = makeText(String(count), 21, column.color);
+    total.position.set(x + 20, 123);
+    layer.addChild(card, label, total);
   });
-
-  if (snapshot.partial) {
-    const partial = makeText('LECTURE PARTIELLE', 4, 0x8f4353);
-    partial.position.set(736, 166);
-    layer.addChild(partial);
-  }
+  const open = makeText(snapshot.partial ? 'LECTURE PARTIELLE' : 'OUVRIR LES CARTES ↗', 9, snapshot.partial ? 0x8f4353 : 0x625b6e);
+  open.position.set(736, 155);
+  layer.addChild(open);
 }
 
 function configurePremiumPose(
@@ -618,7 +588,7 @@ function drawCharacter(node: AgentNode, model: PixiAgentModel): void {
 
   node.namePlate
     .clear()
-    .roundRect(-37, -70, 74, 15, 3)
+    .roundRect(-Math.max(82, shortName(agent).length * 7.2 + 18) / 2, -76, Math.max(82, shortName(agent).length * 7.2 + 18), 23, 4)
     .fill({ color: COLORS.namePlate, alpha: 0.94 })
     .stroke({ color: style.color, width: 2 });
   node.nameLabel.text = shortName(agent);
@@ -685,11 +655,33 @@ function createAgentNode(
   const selection = new Graphics();
   const status = new Graphics();
   const namePlate = new Graphics();
-  const nameLabel = makeText('', 7, 0xffffff);
+  const nameLabel = makeText('', 13, 0xffffff);
+  nameLabel.style.fontFamily = 'Arial, Helvetica, sans-serif';
+  nameLabel.style.fontWeight = '600';
   const symbolBubble = new Graphics();
   const symbolLabel = makeText('', 18, COLORS.ink);
 
-  nameLabel.position.set(0, -62.5);
+  const chatter = new Container();
+  chatter.label = `agent-chatter:${agentId}`;
+  chatter.eventMode = 'none';
+  chatter.visible = false;
+  chatter.zIndex = 90_000;
+  const chatterShape = new Graphics();
+  const chatterHeading = makeText('', 8, 0x706079);
+  chatterHeading.position.set(BUBBLE_WIDTH / 2, 13);
+  const chatterText = makeText('', 12, COLORS.ink);
+  chatterText.style.fontFamily = 'Arial, Helvetica, sans-serif';
+  chatterText.style.fontWeight = '600';
+  chatterText.style.letterSpacing = 0;
+  chatterText.style.align = 'center';
+  chatterText.style.lineHeight = 14;
+  chatterText.position.set(BUBBLE_WIDTH / 2, 40);
+  const chatterDots = new Graphics();
+  chatter.addChild(chatterShape, chatterHeading, chatterText, chatterDots);
+  const ambientEffects = new Graphics();
+  ambientEffects.label = 'agent-ambient-effects';
+  ambientEffects.eventMode = 'none';
+  nameLabel.position.set(0, -64);
   symbolLabel.position.set(29, -49);
   hud.addChild(
     namePlate,
@@ -697,7 +689,7 @@ function createAgentNode(
     symbolBubble,
     symbolLabel,
   );
-  container.addChild(premiumPose, deskUpperPose, deskLowerPose, activityProp, selection, status);
+  container.addChild(premiumPose, deskUpperPose, deskLowerPose, activityProp, ambientEffects, selection, status);
   container.eventMode = 'static';
   container.cursor = 'pointer';
   container.hitArea = {
@@ -721,6 +713,7 @@ function createAgentNode(
     nameLabel,
     symbolBubble,
     symbolLabel,
+    chatter, chatterShape, chatterHeading, chatterText, chatterDots, chatterKey: '', ambientEffects,
     route: [],
     startedAt: 0,
     destination: { x: 0, y: 0 },
@@ -732,6 +725,7 @@ function createAgentNode(
     settlingStartedAt: null,
     agentId,
     routeBlocked: false,
+    waitingToEnter: false,
     queued: false,
     model: null,
     currentPoint: { x: 0, y: 0 },
@@ -752,6 +746,7 @@ export class PixiWorldRenderer implements WorldRenderer {
   private kanbanKey = '';
   private suspendedAt: number | null = null;
   private trafficNeedsPlanning = true;
+  private ambienceStartedAt: number | null = null;
   private motionListener: (id: string, destination: SpritePoint, blocked: boolean) => void = () => {};
   setMotionListener(listener: typeof this.motionListener): void { this.motionListener = listener; }
   private readonly visibilityChanged = (): void => {
@@ -759,6 +754,7 @@ export class PixiWorldRenderer implements WorldRenderer {
       this.suspendedAt ??= this.now(); this.app?.ticker.stop();
     } else if (this.suspendedAt !== null) {
       const now = this.now();
+      if (this.ambienceStartedAt !== null) this.ambienceStartedAt += now - this.suspendedAt;
       for (const node of this.nodes.values()) {
         node.startedAt += now - Math.max(this.suspendedAt, node.startedAt);
         if (node.settlingStartedAt !== null) node.settlingStartedAt += now - Math.max(this.suspendedAt, node.settlingStartedAt);
@@ -790,7 +786,7 @@ export class PixiWorldRenderer implements WorldRenderer {
           autoDensity: true,
           backgroundColor: COLORS.ink,
           preference: [preference],
-          resolution: 1,
+          resolution: Math.min(2, window.devicePixelRatio || 1),
         });
         app = candidate;
         break;
@@ -883,6 +879,7 @@ export class PixiWorldRenderer implements WorldRenderer {
     }
 
     this.app = app;
+    this.ambienceStartedAt = this.now();
     const world = buildWorld(app.stage, textures);
     this.kanbanLayer = world.kanbanLayer;
     this.environmentFx = world.environmentFx;
@@ -933,9 +930,10 @@ export class PixiWorldRenderer implements WorldRenderer {
     this.trafficNeedsPlanning = true;
     for (const [agentId, node] of this.nodes) {
       if (!liveIds.has(agentId)) {
-        app.stage.removeChild(node.container, node.hud);
+        app.stage.removeChild(node.container, node.hud, node.chatter);
         node.container.destroy({ children: true });
         node.hud.destroy({ children: true });
+        node.chatter.destroy({ children: true });
         this.nodes.delete(agentId);
         this.avatarAssignments.delete(agentId);
       }
@@ -955,8 +953,11 @@ export class PixiWorldRenderer implements WorldRenderer {
         const poseSet = premiumPoseSets[avatarIndex];
         node = createAgentNode(agent.agent_id, this.onSelect, poseSet);
         this.nodes.set(agent.agent_id, node);
-        app.stage.addChild(node.container, node.hud);
+        app.stage.addChild(node.container, node.hud, node.chatter);
         node.currentPoint = motion.moving ? motion.origin : motion.destination;
+        // New arrivals (including agents returning from overflow) share an
+        // entrance. Keep them outside the scene until their turn to walk.
+        node.waitingToEnter = motion.moving;
       }
 
       const destinationChanged = node.model === null || node.destination.x !== motion.destination.x || node.destination.y !== motion.destination.y;
@@ -974,6 +975,7 @@ export class PixiWorldRenderer implements WorldRenderer {
         if (unreachable) this.motionListener(agent.agent_id, motion.destination, true);
       }
       if (snapshot.reducedMotion && (node.queued || node.moving)) {
+        node.waitingToEnter = false;
         node.queued = false;
         node.currentPoint = motion.destination; node.route = [motion.destination]; node.moving = false;
         this.motionListener(agent.agent_id, motion.destination, false);
@@ -983,11 +985,13 @@ export class PixiWorldRenderer implements WorldRenderer {
         drawCharacter(node, { ...model, interaction: node.routeBlocked ? 'standing-idle' : node.queued ? node.interaction : model.interaction, motion: { ...motion, moving: node.moving } }); node.visualKey = visualKey;
       }
       this.positionNode(node, node.currentPoint);
+      if (node.reducedMotion || snapshot.paused || !ambientEligible(node.phase)) node.ambientEffects.clear();
     }
     if (!snapshot.paused && !document.hidden) this.startNextMovement();
     this.updateEnvironment(snapshot);
 
     this.animateEnvironment(this.now());
+    this.animateChatter(this.now());
     app.render();
     const animationActive = [...this.nodes.values()].some((node) => !node.reducedMotion && node.moving)
       || [...this.nodes.values()].some((node) =>
@@ -1005,6 +1009,7 @@ export class PixiWorldRenderer implements WorldRenderer {
     this.animateEnvironment(now);
     let animationActive = false;
     for (const node of this.nodes.values()) {
+      if (node.waitingToEnter) continue;
       if (!node.reducedMotion && node.moving && node.route.length >= 2) {
         const progress = Math.min(1, (now - node.startedAt) / node.duration);
         const point = interpolateRoute(node.route, progress);
@@ -1043,6 +1048,7 @@ export class PixiWorldRenderer implements WorldRenderer {
         animationActive ||= hasContinuousActivity(node);
       }
     }
+    this.animateChatter(now);
     if (!animationActive) {
       this.app?.ticker.stop();
       this.app?.render();
@@ -1057,10 +1063,11 @@ export class PixiWorldRenderer implements WorldRenderer {
     this.trafficNeedsPlanning = false;
     for (const node of this.nodes.values()) {
       if (!node.queued || node.reducedMotion) continue;
-      const occupied = [...this.nodes.values()].filter((other) => other !== node && !other.model?.hidden).map((other) => other.currentPoint);
+      const occupied = [...this.nodes.values()].filter((other) => other !== node && !other.waitingToEnter && !other.model?.hidden).map((other) => other.currentPoint);
       const route = navigate(node.currentPoint, node.destination, occupied);
       if (route.length < 2) continue; // Another queued actor may first need to leave.
       node.route = route; node.queued = false; node.moving = true; node.routeBlocked = false;
+      node.waitingToEnter = false;
       node.startedAt = this.now(); node.duration = movementDuration(route);
       if (node.model) drawCharacter(node, { ...node.model, motion: { ...node.model.motion, moving: true } });
       this.positionNode(node, node.currentPoint);
@@ -1086,6 +1093,7 @@ export class PixiWorldRenderer implements WorldRenderer {
   private animateIdle(node: AgentNode, now: number): void {
     const pulse = Math.sin((now + node.animationOffset) / 650);
     this.resetPose(node);
+    this.animateActivityEffects(node, now);
     node.symbolBubble.position.y = 0;
     node.symbolLabel.position.y = -49;
 
@@ -1115,14 +1123,18 @@ export class PixiWorldRenderer implements WorldRenderer {
       } else if (node.interaction === 'reading-in-lounge') {
         node.activityProp.rotation = pulse * 0.025;
       } else if (node.interaction === 'drinking-coffee') {
-        node.activityProp.position.y += Math.round(pulse);
+        const sip = Math.max(0, Math.sin((now + node.animationOffset) / 1900));
+        node.activityProp.position.y -= sip * 6;
+        node.activityProp.rotation = -sip * 0.16;
       }
     } else if (node.interaction === 'washing-dishes') {
       node.activityProp.rotation = pulse * 0.08;
     } else if (node.interaction === 'cooking-at-counter') {
       node.activityProp.position.x += Math.round(pulse * 2);
     } else if (node.interaction === 'having-coffee') {
-      node.activityProp.position.y += Math.round(pulse);
+      const sip = Math.max(0, Math.sin((now + node.animationOffset) / 1900));
+      node.activityProp.position.y -= sip * 6;
+      node.activityProp.rotation = -sip * 0.16;
     } else if (node.interaction === 'reading-at-bookshelf') {
       node.activityProp.rotation = pulse * 0.025;
     } else if (node.interaction === 'checking-whiteboard') {
@@ -1136,13 +1148,89 @@ export class PixiWorldRenderer implements WorldRenderer {
     }
   }
 
+  private animateActivityEffects(node: AgentNode, now: number): void {
+    const fx = node.ambientEffects;
+    fx.clear();
+    if (!ambientEligible(node.phase) || node.moving || node.queued) return;
+    const t = now + node.animationOffset;
+    if (node.interaction === 'having-coffee' || node.interaction === 'drinking-coffee') {
+      const { x, y } = node.activityProp.position;
+      for (let index = 0; index < 3; index++) {
+        const rise = ((t / 1800 + index / 3) % 1);
+        const steamX = x - 3 + index * 3 + Math.sin(t / 550 + index) * 2;
+        fx.moveTo(steamX, y - 10 - rise * 16).lineTo(steamX + 2, y - 15 - rise * 16)
+          .stroke({ color: 0xfff1d5, width: 1.5, alpha: (1 - rise) * 0.65 });
+      }
+    } else if (node.interaction === 'playing-handheld') {
+      if (Math.sin(t / 180) > 0.3) fx.rect(3, -13, 2, 2).fill(0xffce86);
+    } else if (node.interaction === 'reading-in-lounge') {
+      const turn = Math.max(0, Math.sin(t / 2400));
+      fx.moveTo(0, -16).lineTo(7 * turn, -17).lineTo(7 * turn, -7)
+        .stroke({ color: 0xfff5d7, width: 1.5, alpha: turn * 0.8 });
+    } else if (node.phase === 'available' && ['sitting-on-sofa', 'sitting-in-armchair', 'sitting-on-pouf'].includes(node.interaction)) {
+      // A little daydream sparkle beside the head; the seated body stays put.
+      const rise = (t % 5200) / 5200;
+      if (rise < 0.6) {
+        const x = -25 + rise * 10, y = -48 - rise * 14;
+        fx.moveTo(x - 3, y).lineTo(x + 3, y).moveTo(x, y - 3).lineTo(x, y + 3)
+          .stroke({ color: 0xf7d699, width: 1.5, alpha: Math.sin(rise / 0.6 * Math.PI) * 0.7 });
+      }
+    }
+  }
+
+  private animateChatter(now: number): void {
+    for (const node of this.nodes.values()) node.chatter.visible = false;
+    if (this.pendingSnapshot?.paused || this.pendingSnapshot?.reducedMotion || document.hidden) return;
+    const occupied: BubbleRect[] = [...this.nodes.values()].filter((node) => !node.waitingToEnter).flatMap((node) => [
+      { x: node.hud.position.x - 64, y: node.hud.position.y - 78, width: 128, height: 31 },
+      { x: node.container.position.x - 36, y: node.container.position.y - 88, width: 72, height: 108 },
+    ]);
+    // Only offer a speaking turn where a bubble fits, so a crowded sofa does
+    // not either hide a neighbour or leave the room silent for an entire cycle.
+    const actors = [...this.nodes.values()].filter((node) => !node.waitingToEnter && !node.moving && !node.queued && !node.routeBlocked && !node.model?.selected
+      && bubblePosition(node.hud.position.x, node.hud.position.y, WORLD_WIDTH, WORLD_HEIGHT, occupied));
+    const cues = ambientCues(actors.map((node) => ({ id: node.agentId, phase: node.phase, interaction: node.interaction })), now - (this.ambienceStartedAt ?? now));
+    for (const cue of cues) {
+      const node = this.nodes.get(cue.id)!;
+      const rect = bubblePosition(node.hud.position.x, node.hud.position.y, WORLD_WIDTH, WORLD_HEIGHT, occupied);
+      if (!rect) continue;
+      occupied.push(rect);
+      const tail = Math.max(16, Math.min(BUBBLE_WIDTH - 16, node.hud.position.x - rect.x));
+      const key = `${cue.text}:${cue.color}:${cue.thought}:${tail}`;
+      if (node.chatterKey !== key) {
+        node.chatterKey = key;
+        node.chatterHeading.text = cue.heading;
+        node.chatterText.text = cue.text;
+        node.chatterShape.clear()
+          .roundRect(2, 4, BUBBLE_WIDTH, BUBBLE_HEIGHT, 10).fill({ color: 0x171021, alpha: 0.25 })
+          .roundRect(0, 0, BUBBLE_WIDTH, BUBBLE_HEIGHT, 10).fill(0xfff8e9)
+          .stroke({ color: cue.color, width: 2 });
+        if (cue.thought) {
+          node.chatterShape.circle(tail, BUBBLE_HEIGHT + 7, 4).circle(tail + 4, BUBBLE_HEIGHT + 15, 2)
+            .fill(0xfff8e9).stroke({ color: cue.color, width: 1.5 });
+        } else {
+          node.chatterShape.poly([tail - 6, BUBBLE_HEIGHT - 1, tail, BUBBLE_HEIGHT + 12, tail + 7, BUBBLE_HEIGHT - 1])
+            .fill(0xfff8e9).stroke({ color: cue.color, width: 1.5 });
+        }
+      }
+      node.chatterDots.clear();
+      for (let dot = 0; dot < 3; dot++) {
+        node.chatterDots.circle(BUBBLE_WIDTH - 25 + dot * 6, 12, 1.5)
+          .fill({ color: cue.color, alpha: 0.3 + 0.7 * Math.max(0, Math.sin(cue.age / 250 - dot)) });
+      }
+      node.chatter.visible = true;
+      node.chatter.alpha = cue.alpha;
+      node.chatter.position.set(rect.x, rect.y + (1 - Math.min(1, cue.age / 300)) * 4);
+    }
+  }
+
   private resetPose(node: AgentNode): void {
     node.activityProp.position.set(node.activityPropOrigin.x, node.activityPropOrigin.y);
     node.activityProp.rotation = 0; node.activityProp.alpha = 1;
   }
 
   private updateEnvironment(snapshot: PixiSceneSnapshot): void {
-    snapshot = { ...snapshot, agents: snapshot.agents.filter((m) => !m.hidden).map((m) => {
+    snapshot = { ...snapshot, agents: snapshot.agents.filter((m) => !m.hidden && !this.nodes.get(m.agent.agent_id)?.waitingToEnter).map((m) => {
       const node = this.nodes.get(m.agent.agent_id);
       return { ...m, interaction: node?.queued ? node.interaction : m.interaction,
         motion: { ...m.motion, destination: node?.queued ? node.currentPoint : m.motion.destination, moving: node?.moving ?? m.motion.moving } };
@@ -1200,8 +1288,11 @@ export class PixiWorldRenderer implements WorldRenderer {
 
   private positionNode(node: AgentNode, point: SpritePoint): void {
     node.currentPoint = { ...point };
+    node.container.visible = !node.waitingToEnter;
+    node.hud.visible = !node.waitingToEnter;
     const projected = projectWorldPoint(point);
     node.activityProp.visible = !node.moving;
+    node.ambientEffects.visible = !node.moving && !node.queued && !node.reducedMotion;
     node.container.position.set(Math.round(projected.x), Math.round(projected.y));
     const hudOffsetY = !node.moving ? (node.interaction === 'typing-at-desk' ? -70 : node.interaction === 'researching-at-lab' ? -35 : node.interaction === 'inspecting-lab' ? -25 : 0) : 0;
     node.hud.position.set(Math.round(projected.x), Math.round(projected.y + hudOffsetY));

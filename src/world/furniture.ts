@@ -1,3 +1,4 @@
+import { own } from '../records';
 import type { AgentInteraction, SpritePoint } from './placement';
 
 export interface InteractionSlot {
@@ -117,7 +118,7 @@ const PHASE_SLOTS: Record<string, readonly InteractionSlot[]> = {
 };
 
 export function slotsForPhase(phase: string): readonly InteractionSlot[] | undefined {
-  return PHASE_SLOTS[phase];
+  return own(PHASE_SLOTS, phase);
 }
 
 export function interactionSlotFor(phase: string, slotIndex: number): InteractionSlot | undefined {

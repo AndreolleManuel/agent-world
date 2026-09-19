@@ -1,3 +1,4 @@
+import { own, dictionary } from '../records';
 import {
   interactionSlotFor,
   slotsForPhase,
@@ -83,6 +84,28 @@ export interface PhaseSlotAssignment {
 }
 
 export type PhaseSlotAssignments = Record<string, PhaseSlotAssignment>;
+
+export const DESK_IDLE_GRACE_MS = 90_000;
+export type DeskPresence = Record<string, { phase: string; lastActiveAt: number }>;
+
+// Keep the destination stable between short tasks, without retaining a work
+// status. Only fresh observations can renew the grace period.
+export function reconcileDeskPresence(
+  previous: DeskPresence,
+  agents: readonly { agent_id: string; task_phase: string }[],
+  now: number,
+): DeskPresence {
+  return Object.fromEntries(agents.flatMap(({ agent_id, task_phase }) => {
+    if (task_phase === 'live_run' || task_phase === 'live_session') {
+      return [[agent_id, { phase: task_phase, lastActiveAt: now }]];
+    }
+    const recent = own(previous, agent_id);
+    if (task_phase === 'available' && recent && now - recent.lastActiveAt < DESK_IDLE_GRACE_MS) {
+      return [[agent_id, recent]];
+    }
+    return [];
+  }));
+}
 
 function slotGroupForPhase(phase: string): string {
   return phase === 'available' ? 'available' : 'laboratory';
@@ -204,7 +227,7 @@ export function placementFor(
   _scene: WorldScene,
   slotIndex?: number,
 ): AgentPlacement {
-  const region = PHASE_REGIONS[taskPhase] ?? UNKNOWN_REGION;
+  const region = own(PHASE_REGIONS, taskPhase) ?? UNKNOWN_REGION;
   const objectSlot = slotIndex === undefined
     ? undefined
     : interactionSlotFor(taskPhase, slotIndex);
@@ -247,17 +270,17 @@ export function reconcilePhaseSlots(
   previous: PhaseSlotAssignments,
   agents: readonly { agent_id: string; task_phase: string }[],
 ): PhaseSlotAssignments {
-  const next: PhaseSlotAssignments = {};
+  const next = dictionary<PhaseSlotAssignment>();
   const usedByPhase = new Map<string, Set<number>>();
   const orderedAgents = [...agents]
     .sort((left, right) => left.agent_id.localeCompare(right.agent_id));
 
   for (const agent of orderedAgents) {
-    const existing = previous[agent.agent_id];
+    const existing = own(previous, agent.agent_id);
     const group = slotGroupForPhase(agent.task_phase);
     // Keep occupants already on a real seat stable. Only overflow occupants are
     // compacted when one of those seats becomes available.
-    if (existing?.slotIndex >= (slotsForPhase(agent.task_phase)?.length ?? 0)) continue;
+    if (existing && existing.slotIndex >= (slotsForPhase(agent.task_phase)?.length ?? 0)) continue;
     if (!existing || slotGroupForPhase(existing.phase) !== group) continue;
     const used = usedByPhase.get(group) ?? new Set<number>();
     if (used.has(existing.slotIndex)) continue;

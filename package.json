@@ -1,7 +1,7 @@
 {
   "name": "pixel-ops",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -18,7 +18,7 @@
     "prepare:public": "node scripts/prepare-public-source.mjs",
     "build:mac": "node scripts/build-mac.mjs",
     "build:icon": "node scripts/build-icon.mjs",
-    "build:beta": "node scripts/build-mac.mjs --with-collectors",
+    "build:beta": "node scripts/build-mac.mjs",
     "package:beta": "node scripts/package-beta.mjs",
     "tauri": "tauri"
   },
@@ -38,6 +38,6 @@
     "jsdom": "^26.1.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.5",
-    "vitest": "^3.2.4"
+    "vitest": "4.1.11"
   }
 }
