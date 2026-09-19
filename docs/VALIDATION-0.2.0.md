@@ -2,6 +2,8 @@
 
 Candidat développeurs, préparation locale. Aucun push, release, modification du site ni installation sur un VPS réel. Ce rapport ne vaut pas certification ; le reçu de paquet complète les vérifications du binaire exact après compilation.
 
+Décision de distribution confirmée le 19 septembre : application volontairement non notarisée, présentée pour **Mac Apple Silicon**, et **Debian 13 ARM64 avec OpenSSH et systemd** pour les composants serveur. **macOS 26.6.2 est la version testée, pas la seule version autorisée.** Le projet vise les versions récentes de macOS sans promettre une compatibilité historique depuis le seuil technique de compilation. Mac Intel et Linux x86_64 restent hors du périmètre annoncé ; leur recette ne bloque pas ce lancement.
+
 ## Corrections couvertes
 
 Protocole 2 strict et partagé ; masquage des titres/noms distants par défaut ; IDs opaques et alias locaux ; séparation exporteur/lecteur VPS ; compte et clé restreints ; refus des anciennes connexions générales ; confirmation native et capacités IPC explicites ; helper local isolé ; registre inaccessible/ambigu/volumineux refusé ; dictionnaires sans collision de prototype ; avatars obsolètes purgés ; installation administrative avec sauvegarde, reprise, révocation et désinstallation ; Vitest mis à jour.
@@ -36,7 +38,7 @@ Les tests de plusieurs composants réexécutent du code partagé : leur addition
 - Linux arm64 testé dans une VM Debian locale, pas chez un hébergeur. x86_64 compilé ; exécution x86_64, Mac Intel et macOS minimum 12.3 non validés ici. Les workflows multi-architectures sont préparés mais non exécutés sur GitHub dans cette intervention.
 - Confinement macOS testé sur la machine de développement Apple Silicon ; `sandbox-exec` doit rester disponible et vérifié. Si absent, la collecte échoue sans repli.
 - Une interruption brutale à chaque instruction de l’installateur n’a pas été simulée. Les échecs contrôlés restaurent les fichiers ; conserver une session administrative et les sauvegardes pour les interruptions OS.
-- Signature Developer ID/notarisation et clé de signature officielle des paquets serveur non configurées. Ne pas présenter un SHA-256 ou une signature ad hoc comme une identité d’éditeur authentifiée.
+- Signature Developer ID/notarisation volontairement hors du canal retenu. Identité Ed25519 du mainteneur créée ; clé publique et procédure dans [SIGNATURES.md](SIGNATURES.md). Le reçu du paquet final précise la validation de ses signatures effectives. Cette identité OpenSSH n’est pas un certificat Apple.
 - Téléchargement public, quarantaine d’un téléchargement HTTPS réel, redirections et cache du site restent à vérifier après décision de publication. Les anciennes releases 0.1.x ne sont pas remplacées par cette préparation.
 
 Pour une diffusion initiale honnête : sources et candidat de test destinés aux développeurs, avec ces limites visibles. Une release stable doit achever la recette des cibles annoncées et l’authentification des artefacts. Guides : [installation](INSTALLATION.md), [VPS](VPS.md), [sécurité](SECURITY.md), [publication](PUBLICATION.md).

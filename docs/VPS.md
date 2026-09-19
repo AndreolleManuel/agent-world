@@ -1,6 +1,6 @@
 # VPS — installation administrative du protocole 2
 
-Pour développeurs et administrateurs Linux. La préparation est distincte de l’app Mac. Ne jamais donner au viewer une clé root/Hermes générale. Référence testée : Debian 13 arm64, OpenSSH et systemd. Les autres distributions doivent valider les protections avant toute annonce de compatibilité.
+Pour développeurs et administrateurs Linux. La préparation est distincte de l’app Mac. Ne jamais donner au viewer une clé root/Hermes générale. Configuration prise en charge : **Debian 13 ARM64, OpenSSH et systemd**, validée dans une VM locale. Aucune autre architecture ou distribution n’est annoncée compatible.
 
 ## Architecture
 
@@ -10,7 +10,7 @@ L’exporteur reste de confiance : les bases contiennent potentiellement plus qu
 
 ## 1. Compiler ou authentifier les composants
 
-Examiner les sources d’une révision précise. Sur chaque architecture Linux cible, installer Rust 1.98.0, `musl-tools`, compilateur C et `sqlite3`, puis :
+Examiner les sources d’une révision précise. Sur Debian 13 ARM64, installer Rust 1.98.0, `musl-tools`, compilateur C et `sqlite3`, puis :
 
 ```sh
 rustup target add aarch64-unknown-linux-musl
@@ -18,9 +18,7 @@ CC=musl-gcc RUSTFLAGS='-C linker=musl-gcc -C target-feature=+crt-static' cargo b
 RUSTFLAGS='-C linker=musl-gcc -C target-feature=+crt-static' cargo build --locked --release --manifest-path reader/Cargo.toml --target aarch64-unknown-linux-musl
 ```
 
-Pour x86_64, remplacer le triplet par `x86_64-unknown-linux-musl`. Un binaire compilé n’est pas une preuve de fonctionnement sur cette architecture.
-
-L’installateur exige les hashes des deux ELF statiques et leur architecture. Pour une compilation que vous avez examinée vous-même, ajouter explicitement `--reviewed-source-build`. Pour un paquet précompilé, fournir `--manifest`, `--signature`, `--allowed-signers` et `--signer` : vérification OpenSSH `ssh-keygen -Y verify`, namespace `agent-world-server`. Le manifeste JSON contient `protocol: 2`, `architecture`, `readerSha256` et `collectorSha256`. Vérifier la signature et les hashes depuis un outil de confiance avant de lancer un script en root ; le contrôle interne ne peut pas rendre sûr un installateur déjà modifié. Examiner les deux scripts administratifs. La clé de confiance doit être obtenue indépendamment du paquet. **Aucune clé de signature officielle 0.2.0 n’a encore été publiée : un hash seul n’authentifie pas le mainteneur.**
+L’installateur exige les hashes des deux ELF statiques et leur architecture. Pour une compilation que vous avez examinée vous-même, ajouter explicitement `--reviewed-source-build`. Pour un paquet précompilé, fournir `--manifest`, `--signature`, `--allowed-signers` et `--signer` : vérification OpenSSH `ssh-keygen -Y verify`, namespace `agent-world-server`. Le manifeste JSON contient `protocol: 2`, `architecture`, `readerSha256` et `collectorSha256`. Vérifier la signature et les hashes depuis un outil de confiance avant de lancer un script en root ; le contrôle interne ne peut pas rendre sûr un installateur déjà modifié. Examiner les deux scripts administratifs. La clé de confiance doit être obtenue indépendamment du paquet. L’identité du mainteneur et la vérification de l’inventaire complet, qui couvre aussi les scripts, sont décrites dans [SIGNATURES.md](SIGNATURES.md). Un hash seul n’authentifie pas le mainteneur.
 
 ## 2. Créer la clé de consultation sur le Mac
 
@@ -76,3 +74,58 @@ sudo python3 scripts/vps_admin.py uninstall --apply
 Sans `--apply`, ces commandes ne modifient rien. Révocation : vide uniquement le fichier de clés publiques dédié ; les lectures déjà en cours se terminent sous cinq secondes. Rotation : révoquer, générer une nouvelle clé dédiée, réinstaller la nouvelle `.pub`, vérifier, puis retirer l’ancienne clé/trousseau du Mac. **Un retour arrière restaure aussi l’ancienne clé autorisée : ne pas l’utiliser après vol de cette clé sans corriger la sauvegarde ou révoquer à nouveau.**
 
 Désinstallation : arrête le service/timer, retire le fragment, les binaires et le snapshot courant. Les données Hermes restent intactes ; compte sans exécutable de connexion et sauvegardes administratives sont conservés pour récupération/suppression explicite. Une connexion administrative existante reste nécessaire pour contrôler le résultat. Ne pas supprimer des répertoires Hermes, modifier globalement SSH ou réutiliser une clé administrative.
+
+## Mainteneur : signer les fichiers distribués
+
+La signature est gratuite et utilise [OpenSSH](https://man.openbsd.org/ssh-keygen). Elle permet de vérifier qu’un manifeste a été signé avec la clé privée correspondant à une clé publique de confiance. Les empreintes du manifeste permettent ensuite de vérifier les deux binaires. Elle ne certifie pas l’absence de bugs et ne chiffre pas les données ; le transport reste protégé par SSH.
+
+### Une fois : créer une identité de signature
+
+L’identité d’Agent World existe déjà ; voir [SIGNATURES.md](SIGNATURES.md). La procédure ci-dessous explique la création initiale pour un nouveau projet ou une rotation préparée ; ne pas remplacer la clé existante. Sur le Mac du mainteneur, dans un terminal personnel :
+
+```sh
+mkdir -p "$HOME/.ssh"
+ssh-keygen -t ed25519 -a 100 -f "$HOME/.ssh/agent-world-release" -C "AM Labs Agent World releases"
+```
+
+Choisir une phrase secrète non vide, saisie directement dans le terminal. Si ce nom de fichier existe déjà, refuser son remplacement. `agent-world-release` est la clé privée : conserver hors du dépôt et des archives, avec une sauvegarde chiffrée. `agent-world-release.pub` est la clé publique, destinée à être publiée. Cette identité de signature est distincte de la clé de consultation `agent-world-viewer` et ne doit pas être ajoutée aux clés autorisées d’un serveur.
+
+### À chaque version : calculer le manifeste puis signer
+
+Le parcours complet recommandé pour le mainteneur utilise `scripts/sign-release.sh`, décrit dans [SIGNATURES.md](SIGNATURES.md). Les commandes ci-dessous montrent les opérations individuelles ; la signature du seul manifeste serveur ne couvre pas les scripts administratifs.
+
+Dans un dossier de préparation contenant les deux binaires ARM64 examinés et testés, nommés `agent-world-collector` et `agent-world-reader`, générer un nouveau fichier :
+
+```sh
+python3 - <<'PY'
+import hashlib, json
+from pathlib import Path
+def sha(name):
+    return hashlib.sha256(Path(name).read_bytes()).hexdigest()
+manifest = {
+    'protocol': 2,
+    'architecture': 'aarch64',
+    'collectorSha256': sha('agent-world-collector'),
+    'readerSha256': sha('agent-world-reader'),
+}
+with open('server-manifest.json', 'x') as out:
+    json.dump(manifest, out, indent=2)
+    out.write('\n')
+PY
+ssh-keygen -Y sign -f "$HOME/.ssh/agent-world-release" -n agent-world-server server-manifest.json
+```
+
+Saisir la phrase secrète : OpenSSH produit `server-manifest.json.sig`. Le manifeste et sa signature se distribuent avec les binaires. Ne plus modifier le manifeste après signature. L’architecture est celle des binaires Linux, même lorsque la signature est réalisée sur Mac.
+
+### Vérifier avec une clé publique connue
+
+Pour la vérification locale du mainteneur, créer la liste des signataires à partir de sa propre clé publique :
+
+```sh
+awk '{print "am-labs namespaces=\"agent-world-server\" " $1 " " $2}' "$HOME/.ssh/agent-world-release.pub" > allowed-signers
+ssh-keygen -Y verify -f allowed-signers -I am-labs -n agent-world-server -s server-manifest.json.sig < server-manifest.json
+```
+
+Cette commande doit réussir. Les utilisateurs doivent construire ou vérifier `allowed-signers` avec la clé publique obtenue par un canal de confiance indépendant du paquet, par exemple la page HTTPS du projet, et conserver cette référence pour les mises à jour. Accepter une nouvelle clé uniquement parce qu’elle accompagne le téléchargement annule cette protection. Un fichier remplacé avec son nouveau hash ne passera pas la signature du manifeste d’origine.
+
+Avant toute exécution en root, vérifier aussi les hashes des deux binaires et examiner les deux scripts administratifs : ce manifeste ne signe pas ces scripts. L’installateur répète la vérification des signatures et des hashes avec les options `--manifest`, `--signature`, `--allowed-signers` et `--signer am-labs` (chemins absolus). Pour diffuser également les scripts sous signature, signer un inventaire complet séparé et le vérifier avec un outil de confiance avant de les exécuter.

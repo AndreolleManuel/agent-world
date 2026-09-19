@@ -12,6 +12,10 @@ La version 0.2.0 reste un candidat tant que sa mise en ligne n'est pas décidée
 
 ## Avant activation du lien du site
 
-Décider du canal : source développeur ou bêta Mac explicitement non notarisée. Une version stable demande notamment Developer ID/notarisation et recette sur les cibles annoncées. Vérifier ensuite le lien HTTPS réel, ses redirections, le nom/version/hash réellement téléchargés et le cache du site. Cette vérification ne peut être faite avant publication de l'artefact ; ne pas inventer un résultat.
+Canal retenu : sources pour développeurs et application Mac explicitement non notarisée, sans abonnement Apple. Présentation : **Mac Apple Silicon** et, pour les composants serveur, **Debian 13 ARM64 avec OpenSSH et systemd**. La version exacte de macOS testée figure dans le rapport de recette, pas comme restriction commerciale à une version unique. Le projet vise les macOS récents sans annoncer une compatibilité historique non vérifiée. Les autres architectures et distributions ne font pas partie du périmètre annoncé ; leur compilation éventuelle ne change pas cette décision.
+
+Vérifier le lien HTTPS réel, ses redirections, le nom/version/hash réellement téléchargés, le cache du site et le parcours d’exception individuelle Gatekeeper. Cette vérification ne peut être faite avant publication de l’artefact ; ne pas inventer un résultat. La notarisation n’est pas un prérequis du canal retenu. Les paquets serveur précompilés nécessitent une signature de mainteneur vérifiable ; la compilation personnelle depuis des sources examinées reste disponible.
 
 Prévoir le retrait d'une archive compromise, des notes de migration et la révocation des clés de consultation concernées. Protéger les droits de publication GitHub/site. Les commandes de push, release et déploiement restent une décision du mainteneur.
+
+L’identité de signature est documentée dans [SIGNATURES.md](SIGNATURES.md). Inclure les signatures du manifeste serveur et de l’inventaire complet dans la version publiée ; afficher la clé publique ou son empreinte sur une référence HTTPS indépendante des archives. La création de la clé et la signature locale n’autorisent pas à elles seules une mise en ligne.

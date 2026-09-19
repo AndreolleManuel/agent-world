@@ -15,13 +15,17 @@ npm run build:beta -- --bundles app
 npm run package:beta
 ```
 
-Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256SUMS`. Le hash détecte une modification ; il n’authentifie pas à lui seul l’auteur. Une bêta publique doit provenir de la [page Releases du dépôt officiel](https://github.com/AndreolleManuel/agent-world/releases) et annoncer explicitement 0.2.0. Aucun lien vers un fichier inexistant n’est fourni.
+Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256SUMS`. Le hash détecte une modification ; il n’authentifie pas à lui seul l’auteur. La distribution finale du mainteneur ajoute une signature de l’inventaire : voir [SIGNATURES.md](SIGNATURES.md). Une bêta publique doit provenir de la [page Releases du dépôt officiel](https://github.com/AndreolleManuel/agent-world/releases) et annoncer explicitement 0.2.0. Aucun lien vers un fichier inexistant n’est fourni.
 
 ## Bundle Mac
 
 Extraire l’archive, placer Agent World.app dans Applications, puis ouvrir l’app. La build ad hoc n’est pas notarisée : Gatekeeper peut la bloquer. Ne pas désactiver Gatekeeper ni enlever globalement la quarantaine. Si le candidat est identifié et accepté, suivre l’exception individuelle décrite par [Apple](https://support.apple.com/fr-fr/102445). Une alerte « malveillant », « endommagé » ou « modifié » demande d’arrêter et vérifier le fichier.
 
-Compilation universelle arm64/x86_64 ; minimum déclaré macOS 12.3. Seules les plateformes effectivement testées sont annoncées dans [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md). Un candidat ad hoc n’apporte pas l’identité Developer ID d’une distribution notarisée.
+Application pour **Mac Apple Silicon**. La version de macOS utilisée pour les essais est consignée dans [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md) ; elle ne limite pas l’installation à cette seule version. Le projet vise les versions récentes de macOS sans promettre le support des anciennes versions. Le seuil technique de compilation à 12.3 ne constitue pas une garantie de compatibilité depuis cette version. Le bundle contient aussi une architecture Intel, non incluse dans le périmètre annoncé.
+
+Mode distant : **Debian 13 ARM64 avec OpenSSH et systemd**, après préparation administrative.
+
+La distribution non notarisée est un choix du projet. Une signature ad hoc n’apporte pas l’identité Developer ID d’une distribution notarisée ; l’exception individuelle macOS reste à expliquer et à tester sur le téléchargement exact.
 
 ## Source locale
 

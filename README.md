@@ -4,6 +4,8 @@ Un laboratoire pixel-art pour observer l’activité de ses agents Hermes sur Ma
 
 **0.2.0 — candidat de test pour développeurs.** Cette version remplace l’ancien accès SSH général par un lecteur dédié et un export limité. Les anciennes archives 0.1.x ne bénéficient pas de ces protections. Le candidat 0.2.0 n’est pas encore une release publique ni une version notarisée.
 
+**Pour Mac Apple Silicon ; pour le mode distant, serveur Debian 13 ARM64 avec OpenSSH et systemd.** La distribution Mac est volontairement non notarisée. La version de macOS utilisée pour la recette est indiquée dans le rapport de validation ; elle ne constitue pas une restriction à cette seule version.
+
 [Installer / compiler](docs/INSTALLATION.md) · [Préparer un VPS](docs/VPS.md) · [Confidentialité](docs/PRIVACY.md) · [Sécurité](docs/SECURITY.md) · [Validation](docs/VALIDATION-0.2.0.md) · [Contribuer](CONTRIBUTING.md)
 
 ![Agent World, capture du mode démo](docs/screenshots/agent-world-demo.png)
@@ -39,7 +41,7 @@ npm run tauri dev
 
 Démo navigateur : `npm run dev`, puis `http://127.0.0.1:1420/?fixture=1`. Scénarios mixte, dix actifs/en pause/sans preuve, quarante ou 256 agents, registre vide et erreur. Aucune lecture Hermes en mode démo. Ces routes sont exclues de la production.
 
-Build : `npm run build:beta -- --bundles app`, puis `npm run package:beta`. Produit un bundle universel signé ad hoc, **non notarisé**. La compilation Intel et le minimum déclaré macOS 12.3 ne valent pas validation sur ces machines. Les parcours réellement essayés et limites sont dans le [rapport](docs/VALIDATION-0.2.0.md).
+Build : `npm run build:beta -- --bundles app`, puis `npm run package:beta`. Produit un bundle universel signé ad hoc, **non notarisé**. Les architectures présentes dans le binaire et le seuil technique de compilation n’étendent pas les configurations prises en charge ci-dessus. Les parcours essayés sont dans le [rapport](docs/VALIDATION-0.2.0.md).
 
 ## Contributions et licence
 
