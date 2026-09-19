@@ -37,6 +37,17 @@ L’administrateur prépare d’abord le service séparé décrit dans [VPS.md](
 
 ## Migration, mise à jour, retrait
 
+La version 0.2.0 ne recherche ni ne télécharge automatiquement les mises à jour. La mise à jour depuis l’app est prévue pour une version ultérieure, sans date annoncée.
+
+Pour une nouvelle version Mac :
+
+1. Lire les notes de version et les éventuelles consignes de migration.
+2. Télécharger l’archive du mainteneur et vérifier sa signature selon [SIGNATURES.md](SIGNATURES.md).
+3. Fermer complètement Agent World, puis remplacer l’application dans Applications.
+4. Relancer et vérifier les agents, la source sélectionnée et la fraîcheur de la lecture.
+
+Les réglages sont stockés séparément de l’application et conservés lors de son remplacement. Une nouvelle version de l’app ne met pas à jour les composants VPS : l’administrateur suit la procédure et les sauvegardes de [VPS.md](VPS.md) si les notes de version le demandent. Conserver l’ancienne archive et une sauvegarde privée des réglages avant une migration ; ne pas présumer qu’une ancienne app saura relire des réglages migrés.
+
 Les préférences 0.1.x sont copiées dans `hermes-source.pre-v2.json` avant migration des identifiants, sélections et avatars. Les connexions générales anciennes restent à reconfigurer et ne se reconnectent pas automatiquement. En cas de configuration corrompue, la récupération archive le fichier après confirmation native ; elle ne supprime aucune donnée Hermes.
 
 Fermer l’app avant de la remplacer. Mettre l’app à la corbeille ne révoque pas la clé VPS. Révoquer côté serveur selon [VPS.md](VPS.md), puis retirer uniquement la clé dédiée et son entrée de trousseau si souhaité. Les préférences sont dans le dossier de configuration de l’app (`com.amlabs.pixelops` sous `~/Library/Application Support`). Ne jamais effacer Hermes pour désinstaller Agent World.

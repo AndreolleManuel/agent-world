@@ -1,50 +1,115 @@
-# AM Labs · Agent World
+<p align="center">
+  <img src="src-tauri/icons/agent-world.svg" width="76" height="76" alt="Icône Agent World">
+</p>
 
-Un laboratoire pixel-art pour observer l’activité de ses agents Hermes sur Mac : travail confirmé, attente, blocages et absence de preuve. Gratuit et open source, sous licence MIT. Créé par [AM Labs](https://amlabs.dev).
+<h1 align="center">Agent World</h1>
 
-**0.2.0 — candidat de test pour développeurs.** Cette version remplace l’ancien accès SSH général par un lecteur dédié et un export limité. Les anciennes archives 0.1.x ne bénéficient pas de ces protections. Le candidat 0.2.0 n’est pas encore une release publique ni une version notarisée.
+<p align="center">
+  Vos agents Hermes, réunis dans un laboratoire pixel-art.<br>
+  Voyez qui travaille, attend une décision ou ne donne plus signe d’activité.
+</p>
 
-**Pour Mac Apple Silicon ; pour le mode distant, serveur Debian 13 ARM64 avec OpenSSH et systemd.** La distribution Mac est volontairement non notarisée. La version de macOS utilisée pour la recette est indiquée dans le rapport de validation ; elle ne constitue pas une restriction à cette seule version.
+<p align="center">
+  <strong>Mac Apple Silicon · Lecture seule · Gratuit et open source</strong>
+</p>
 
-[Installer / compiler](docs/INSTALLATION.md) · [Préparer un VPS](docs/VPS.md) · [Confidentialité](docs/PRIVACY.md) · [Sécurité](docs/SECURITY.md) · [Validation](docs/VALIDATION-0.2.0.md) · [Contribuer](CONTRIBUTING.md)
+<p align="center">
+  <a href="docs/INSTALLATION.md">Installation</a> ·
+  <a href="#essayer-la-démo">Démo</a> ·
+  <a href="docs/VPS.md">Connexion VPS</a> ·
+  <a href="#mises-à-jour">Mises à jour</a> ·
+  <a href="https://amlabs.dev">AM Labs</a>
+</p>
 
-![Agent World, capture du mode démo](docs/screenshots/agent-world-demo.png)
+![Le laboratoire Agent World : agents au travail, salle de repos et tableau Kanban](docs/screenshots/agent-world-demo.png)
 
-La capture utilise des données simulées. Les bulles et occupations sont décoratives ; les statuts proviennent des preuves Hermes. L’app ne commande pas les agents.
+<p align="center"><sub>Capture du mode démo, avec des données simulées. Les animations sont décoratives ; les états reposent sur les preuves d’activité disponibles.</sub></p>
 
-## Données et accès
+> [!NOTE]
+> **Version 0.2.0 — candidat pour développeurs, pas encore publié.**
+> Les anciennes archives publiques 0.1.x utilisent un autre modèle d’accès VPS et ne contiennent pas les protections de cette version.
 
-- Pas de compte AM Labs, télémétrie produit, rapport de plantage automatique ni relais cloud.
-- Sur Mac : consentement natif pour la source ; collecte dans un processus isolé, sans réseau ni écriture dans Hermes. Les noms locaux restent visibles ; les titres sont masqués.
-- Sur VPS : export de profils explicitement choisis par l’administrateur ; identifiants opaques, noms génériques et titres masqués par défaut. Les alias saisis dans l’app restent sur le Mac.
-- Le compte `aw-view` n’a accès qu’au snapshot publié. Sa clé dédiée ne donne ni shell, ni commande libre, ni transfert de fichiers, ni tunnel. L’app ne sait plus installer de logiciel sur le serveur.
-- SSH chiffre la connexion directe. Clé privée Ed25519 chiffrée obligatoire ; Apple OpenSSH utilise le trousseau sans l’agent SSH général. L’empreinte serveur doit être vérifiée séparément.
+## Un aperçu de votre équipe
 
-Le processus d’export lit des bases qui peuvent aussi contenir des données privées : il demeure un composant de confiance. Un OS ou administrateur compromis dépasse ces protections. La sélection d’avatars ne définit pas les permissions du serveur. Voir le [modèle de sécurité](docs/SECURITY.md).
+Agent World observe une installation Hermes existante et donne une vue d’ensemble de son activité. Le laboratoire reste visible pendant que vous consultez les détails.
 
-## Fonctionnement
+- **Les agents** : état, avatar et dernières preuves d’activité dans le panneau Équipe.
+- **Le travail en cours** : cartes Kanban, blocages et revues à suivre.
+- **La fraîcheur des données** : erreurs de lecture et absence de preuve affichées explicitement.
+- **Votre installation** : une source locale sur le Mac, ou un serveur préparé pour la consultation à distance.
 
-Une source à la fois, 256 agents maximum et 512 cartes dans le protocole. La scène a dix places de travail et dix de repos ; les autres agents restent consultables dans Équipe. Actualisation toutes les cinq secondes, erreurs et données périmées explicites, journal en mémoire limité à cent événements. Un agent disponible peut conserver son poste 90 secondes après une activité confirmée sans falsifier son état.
+L’application observe les agents ; elle ne leur envoie pas d’instructions et n’exécute pas leurs tâches. La scène possède dix places de travail et dix de repos. Les agents supplémentaires restent accessibles dans Équipe.
 
-## Développement sur Mac
+## Installer et démarrer
 
-Node.js 22+, Rust 1.98.0 et outils Xcode. Les fichiers lock sont versionnés ; SQLite est embarqué. Les tests utilisent aussi `sqlite3`.
+Hermes doit déjà être installé pour utiliser une source réelle. Pour découvrir l’interface sans connecter de données, commencez par la [démo](#essayer-la-démo).
+
+| Vos agents tournent… | Préparation |
+| --- | --- |
+| **Sur votre Mac** | Ouvrir l’app, choisir « Sur ce Mac », détecter Hermes et autoriser la lecture locale. |
+| **Sur votre VPS** | Préparer le lecteur sur **Debian 13 ARM64 avec OpenSSH et systemd**, puis utiliser une clé SSH dédiée. [Guide VPS](docs/VPS.md). |
+
+Avec une archive de test 0.2.0 fournie par le mainteneur :
+
+1. [Vérifier les fichiers et leur signature](docs/SIGNATURES.md).
+2. Extraire l’archive et placer **Agent World.app** dans **Applications**.
+3. Ouvrir l’app, choisir la source et les agents à afficher.
+
+**L’application Mac n’est pas notarisée.** macOS peut bloquer la première ouverture. Le [guide d’installation](docs/INSTALLATION.md) explique l’exception individuelle, sans désactiver Gatekeeper globalement.
+
+Le projet vise les versions récentes de macOS sur Apple Silicon. La version exacte utilisée pour la recette figure dans le [rapport de validation](docs/VALIDATION-0.2.0.md) ; elle ne limite pas l’app à cette seule version. La présence d’un binaire Intel dans l’archive ne constitue pas une annonce de compatibilité Intel.
+
+## Essayer la démo
+
+Depuis les sources, avec Node.js 22 ou plus récent :
 
 ```sh
 npm ci
-npm run lint
-npm test
-npm run test:release
-cargo test --locked --manifest-path src-tauri/Cargo.toml
+npm run dev
+```
+
+Ouvrir **http://127.0.0.1:1420/?fixture=1**. La démo ne lit aucune donnée Hermes : elle propose plusieurs états et des scénarios de 10, 40 ou 256 agents, ainsi que des cas vides ou en erreur. Elle est réservée au développement et n’est pas embarquée dans la version distribuée.
+
+## Vos données restent entre vos machines
+
+Pas de compte AM Labs, de télémétrie produit, de rapport de plantage automatique ni de relais cloud.
+
+**En local**, la lecture nécessite une confirmation native et s’effectue dans un processus isolé, sans accès réseau ni écriture dans Hermes. Les noms des agents restent visibles ; les titres sont masqués.
+
+**Sur VPS**, l’administrateur choisit les profils publiés. Un export limité expose des identifiants opaques, avec noms et titres masqués par défaut. La connexion SSH est chiffrée ; le compte de consultation ne dispose ni de shell libre, ni de transfert de fichiers, ni de tunnel. Les alias saisis dans l’app restent sur le Mac.
+
+L’exporteur reste un composant de confiance, car il lit des bases pouvant contenir des données privées. Ces protections ne couvrent pas un système ou un administrateur compromis. [Confidentialité](docs/PRIVACY.md) · [Modèle de sécurité](docs/SECURITY.md) · [Protocole](docs/PROTOCOL.md).
+
+## Mises à jour
+
+**La version 0.2.0 se met à jour manuellement.** Elle ne cherche pas de nouvelle version et ne télécharge aucun programme en arrière-plan.
+
+Quand une nouvelle version sera publiée : lire ses notes, vérifier l’archive et sa signature, fermer l’app puis la remplacer dans Applications. Les réglages sont conservés séparément de l’application. Toute migration nécessaire sera indiquée dans les notes de version.
+
+Les composants VPS se mettent à jour séparément par l’administrateur, avec sauvegarde et possibilité de retour arrière. Ne pas les remplacer automatiquement avec l’app Mac. [Installation et migration](docs/INSTALLATION.md) · [Maintenance VPS](docs/VPS.md).
+
+**Prévu pour une prochaine version :** proposer la mise à jour directement depuis l’application. Cette fonction n’est pas encore implémentée.
+
+## Développer et contribuer
+
+Pour l’app native : Node.js 22+, Rust 1.98.0, outils Xcode et `sqlite3` pour les tests.
+
+```sh
+npm ci
 npm run tauri dev
 ```
 
-Démo navigateur : `npm run dev`, puis `http://127.0.0.1:1420/?fixture=1`. Scénarios mixte, dix actifs/en pause/sans preuve, quarante ou 256 agents, registre vide et erreur. Aucune lecture Hermes en mode démo. Ces routes sont exclues de la production.
+Les commandes de vérification sont dans [CONTRIBUTING.md](CONTRIBUTING.md). Pour compiler un paquet local :
 
-Build : `npm run build:beta -- --bundles app`, puis `npm run package:beta`. Produit un bundle universel signé ad hoc, **non notarisé**. Les architectures présentes dans le binaire et le seuil technique de compilation n’étendent pas les configurations prises en charge ci-dessus. Les parcours essayés sont dans le [rapport](docs/VALIDATION-0.2.0.md).
+```sh
+npm run build:beta -- --bundles app
+npm run package:beta
+```
 
-## Contributions et licence
+Un bug ? Joindre la version, le modèle de Mac, macOS et les étapes de reproduction. Utiliser des données fictives ; ne pas partager de clés, de conversations ou de bases Hermes. [Guide de test](docs/TEST-BETA.md). Pour une vulnérabilité, suivre [SECURITY.md](SECURITY.md).
 
-[MIT](LICENSE), copyright © 2026 Manuel Andreolle. Utilisation, modification et redistribution, y compris commerciale, avec les mentions de licence. Les dépendances conservent leurs licences ; notices complètes et sources MPL non modifiées accompagnent la distribution. Le mainteneur atteste avoir créé les visuels pour ce projet, sans pack tiers déclaré ; aucune exclusivité n’est revendiquée sur les éléments purement générés par IA. Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+---
 
-GitHub facilite la lecture du code et la contribution ; un dépôt public ne réserve pas l’utilisation aux développeurs. Ce public est visé par la documentation et les prérequis, sans contrôle d’accès artificiel.
+Créé par **[AM Labs](https://amlabs.dev)** · Licence **[MIT](LICENSE)** · [Notices des dépendances et droits des visuels](THIRD_PARTY_NOTICES.md)
+
+Destiné aux développeurs utilisant Hermes. Le dépôt public permet à chacun d’étudier, modifier et redistribuer le projet dans les conditions de sa licence.
