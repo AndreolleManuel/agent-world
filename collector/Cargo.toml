@@ -10,7 +10,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 time = { version = "0.3", features = ["formatting", "parsing"] }
-rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled", "hooks", "limits"] }
+rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled", "hooks", "limits", "serialize"] }
 libc = "0.2"
 sha2 = "0.10.9"
 

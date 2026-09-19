@@ -12,18 +12,20 @@ Protocole 2 strict et partagé ; masquage des titres/noms distants par défaut ;
 |---|---|
 | TypeScript / frontend | lint, 137 tests, build Vite réussis |
 | Scripts de distribution | 21 tests réussis |
-| Rust application | 23 tests unitaires + 43 lectures/régressions + 3 tests d’isolation macOS réussis |
-| Exporteur / protocole | 12 tests unitaires + 2 tests d’intégration réussis |
+| Rust application | 24 tests unitaires + 43 lectures/régressions + 3 tests d’isolation macOS réussis |
+| Exporteur / protocole | 13 tests unitaires + 2 tests d’intégration réussis |
 | Lecteur | 3 tests de protocole sur Mac ; 4 tests exécutés dans la VM Linux, dont les refus seccomp de fichier/socket/fork |
 | Clippy | trois composants, avertissements traités comme erreurs |
 | Démo via MCP Chrome | mixte, dix actifs/pause/sans preuve, quarante et 256 agents, états mélangés, vide/erreur/reprise ; pas de débordement horizontal en 960×640 ; pas d’erreur console observée |
 | Isolation Mac réelle | lecture autorisée ; fichiers privés dedans/dehors et écritures refusés ; connexion/écoute réseau et création de processus refusées |
-| Debian 13 arm64 jetable | snapshot, sentinelles privées absentes, commandes/SFTP/SCP/écritures/tunnels TCP/Unix refusés ; restrictions PTY/X11/agent/environnement contrôlées dans sshd effectif |
+| Debian 13 arm64 jetable | snapshot, sentinelles privées absentes, commandes/SFTP/SCP/écritures/tunnels TCP/Unix refusés ; bursts simultanés et stdin bloqué bornés ; fausse clé hôte refusée ; restrictions PTY/X11/agent/environnement contrôlées dans sshd effectif |
 | Cycle d’installation VM | installation répétée, échec d’activation avec restauration, révocation, retour arrière, désinstallation et réinstallation ; accès administrateur et fichiers Hermes préservés |
-| Paquets VM | hash altéré et paquet précompilé non authentifié refusés avant installation |
+| Paquets VM | hash altéré, paquet non authentifié et signature modifiée refusés ; manifeste correctement signé accepté |
 | Keychain Mac | clé synthétique chiffrée, connexion SSH avec `IdentityAgent=none` et `UseKeychain=yes` ; identité de test retirée ensuite |
 | Dépendances | npm : zéro vulnérabilité ; RustSec : zéro vulnérabilité signalée dans les trois lockfiles, contrôle du registre inclus |
 | Notices | 281 entrées, cinq archives MPL conformes aux hashes Cargo, aucune notice manquante |
+
+Une régression native supplémentaire a été corrigée : bases WAL fermées sans auxiliaires désormais lues via une image mémoire limitée, sans création de WAL/SHM dans Hermes. Le test s’exécute dans la sandbox macOS réelle. Le bundle précédent utilisé pendant la recette est remplacé par un nouveau candidat.
 
 Les tests de plusieurs composants réexécutent du code partagé : leur addition n’est pas un nombre de protections indépendantes. Les scénarios visuels ne garantissent pas l’absence de tous chevauchements entre avatars mobiles.
 

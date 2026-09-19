@@ -9,7 +9,7 @@ use rusqlite::{
 use std::os::unix::fs::MetadataExt;
 use std::{
     fs::File,
-    io::{self, Write},
+    io::{self, Read, Write},
     path::Path,
     sync::{Mutex, TryLockError},
     time::{Duration, Instant},
@@ -94,7 +94,17 @@ pub fn query(path: &Path, sql: &str, cap: usize, deadline: Instant) -> Result<Ve
     }
     // The bundled upstream engine can read a clean, closed WAL database.
     // macOS /usr/bin/sqlite3 3.51.0 failed with CANTOPEN on its absent -wal file.
-    let bytes = read_rows(path, sql, cap, end)?;
+    let isolated = closed_wal_view(path, &file, end)?;
+    let (connection, stamp) = match isolated {
+        Some((connection, stamp)) => (connection, Some(stamp)),
+        None => (open_readonly(path)?, None),
+    };
+    let bytes = read_rows(connection, sql, cap, end)?;
+    if let Some(stamp) = stamp
+        && (file_stamp(&file)? != stamp || !sidecars_absent(path)?)
+    {
+        return Err(QueryError::Changed);
+    }
     // read_rows drops its statement/connection BEFORE reopening or closing any
     // extra descriptor. No SQLite read transaction is held across this check.
     let current_parent = super::heartbeat::open_directory_no_symlinks(path.parent().unwrap())
@@ -126,18 +136,108 @@ fn authorize(context: AuthContext<'_>) -> Authorization {
     }
 }
 
-fn read_rows(path: &Path, sql: &str, cap: usize, end: Instant) -> Result<Vec<u8>, QueryError> {
+type FileStamp = (u64, u64, u64, i64, i64, i64, i64);
+fn file_stamp(file: &File) -> Result<FileStamp, QueryError> {
+    let m = file.metadata().map_err(|_| QueryError::Unavailable)?;
+    Ok((
+        m.dev(),
+        m.ino(),
+        m.len(),
+        m.mtime(),
+        m.mtime_nsec(),
+        m.ctime(),
+        m.ctime_nsec(),
+    ))
+}
+fn sidecars_absent(path: &Path) -> Result<bool, QueryError> {
+    for suffix in ["-wal", "-shm", "-journal"] {
+        let mut name = path.as_os_str().to_os_string();
+        name.push(suffix);
+        match std::fs::symlink_metadata(name) {
+            Ok(_) => return Ok(false),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => (),
+            Err(_) => return Err(QueryError::Unavailable),
+        }
+    }
+    Ok(true)
+}
+// A cleanly closed WAL database can require SQLite to CREATE sidecars even for
+// a read-only connection. Never grant writes to Hermes to accommodate that.
+// Only when ALL sidecars are absent, use a bounded private in-memory image.
+// Reject it if inode/size/nanosecond mtime/ctime changes or a sidecar appears.
+// Live WALs always use SQLite's normal WAL reader/locks; never immutable=1.
+fn closed_wal_view(
+    path: &Path,
+    file: &File,
+    end: Instant,
+) -> Result<Option<(Connection, FileStamp)>, QueryError> {
+    use std::os::unix::fs::FileExt;
+    let mut header = [0u8; 100];
+    if file
+        .read_at(&mut header, 0)
+        .map_err(|_| QueryError::Unavailable)?
+        != 100
+        || &header[..16] != b"SQLite format 3\0"
+        || header[18..20] != [2, 2]
+        || !sidecars_absent(path)?
+    {
+        return Ok(None);
+    }
+    let stamp = file_stamp(file)?;
+    const MAX_IMAGE: u64 = 32 * 1024 * 1024;
+    if stamp.2 > MAX_IMAGE {
+        return Err(QueryError::TooLarge);
+    }
+    let mut bytes = Vec::new();
+    file.take(MAX_IMAGE + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| QueryError::Unavailable)?;
+    if bytes.len() as u64 != stamp.2 || file_stamp(file)? != stamp || !sidecars_absent(path)? {
+        return Err(QueryError::Changed);
+    }
     if Instant::now() >= end {
         return Err(QueryError::Timeout);
     }
-    // No CREATE, READWRITE or URI flags. A filename cannot inject URI options.
-    let connection = Connection::open_with_flags(
-        path,
+    // SQLite's documented deserialize WAL workaround applies only to this copy.
+    bytes[18] = 1;
+    bytes[19] = 1;
+    let mut connection = Connection::open_in_memory().map_err(classify_error)?;
+    connection
+        .deserialize_read_exact("main", io::Cursor::new(&bytes), bytes.len(), true)
+        .map_err(classify_error)?;
+    Ok(Some((connection, stamp)))
+}
+fn open_readonly(path: &Path) -> Result<Connection, QueryError> {
+    // Encode every URI metacharacter: filenames can never supply SQLite options.
+    let path = path.to_str().ok_or(QueryError::Unavailable)?;
+    let encoded: String = path
+        .bytes()
+        .map(|b| {
+            if b.is_ascii_alphanumeric() || b"/-_.~".contains(&b) {
+                (b as char).to_string()
+            } else {
+                format!("%{b:02X}")
+            }
+        })
+        .collect();
+    Connection::open_with_flags(
+        format!("file:{encoded}?mode=ro&readonly_shm=1"),
         OpenFlags::SQLITE_OPEN_READ_ONLY
             | OpenFlags::SQLITE_OPEN_NO_MUTEX
-            | OpenFlags::SQLITE_OPEN_NOFOLLOW,
+            | OpenFlags::SQLITE_OPEN_NOFOLLOW
+            | OpenFlags::SQLITE_OPEN_URI,
     )
-    .map_err(classify_error)?;
+    .map_err(classify_error)
+}
+fn read_rows(
+    connection: Connection,
+    sql: &str,
+    cap: usize,
+    end: Instant,
+) -> Result<Vec<u8>, QueryError> {
+    if Instant::now() >= end {
+        return Err(QueryError::Timeout);
+    }
     connection
         .busy_timeout(Duration::from_millis(100).min(end.saturating_duration_since(Instant::now())))
         .map_err(classify_error)?;
@@ -313,6 +413,34 @@ mod tests {
             );
         }
         assert_eq!(std::fs::read(&path).unwrap(), before);
+        assert!(!path.with_extension("db-wal").exists());
+        assert!(!path.with_extension("db-shm").exists());
+    }
+
+    #[test]
+    fn uri_metacharacters_in_filenames_cannot_change_readonly_options() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory
+            .path()
+            .canonicalize()
+            .unwrap()
+            .join("literal?mode=rwc&immutable=1.db");
+        let db = Connection::open(&path).unwrap();
+        db.execute_batch("CREATE TABLE t(x); INSERT INTO t VALUES(7);")
+            .unwrap();
+        drop(db);
+        let bytes = query(
+            &path,
+            "SELECT x FROM t",
+            1024,
+            Instant::now() + Duration::from_secs(1),
+        )
+        .unwrap();
+        assert_eq!(
+            rows::<serde_json::Value>(&bytes).unwrap(),
+            vec![serde_json::json!({"x":7})]
+        );
+        assert!(!path.parent().unwrap().join("literal").exists());
     }
 
     // A real separate-process writer avoids accidentally testing SQLite against

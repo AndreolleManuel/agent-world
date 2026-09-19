@@ -20,7 +20,7 @@ base64 = "0.22.1"
 thiserror = "2"
 time = { version = "0.3", features = ["formatting", "parsing"] }
 tauri = { version = "2", features = [] }
-rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled", "hooks", "limits"] }
+rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled", "hooks", "limits", "serialize"] }
 tauri-plugin-dialog = "2"
 
 [target.'cfg(unix)'.dependencies]

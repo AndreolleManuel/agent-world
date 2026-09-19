@@ -16,15 +16,23 @@ fn real_helper_reads_only_approved_metadata_and_redacts_titles() {
     .unwrap();
     fs::write(root.join(".env"), "PRIVATE_SENTINEL").unwrap();
     let db = rusqlite::Connection::open(root.join("state.db")).unwrap();
-    db.execute_batch("CREATE TABLE sessions (id TEXT,title TEXT,ended_at REAL,started_at REAL,last_activity_at REAL,last_activity_description TEXT); CREATE TABLE session_turn_leases (conversation_id TEXT,expires_at REAL);").unwrap();
+    db.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE sessions (id TEXT,title TEXT,ended_at REAL,started_at REAL,last_activity_at REAL,last_activity_description TEXT); CREATE TABLE session_turn_leases (conversation_id TEXT,expires_at REAL);").unwrap();
     let db = rusqlite::Connection::open(root.join("kanban.db")).unwrap();
-    db.execute_batch("CREATE TABLE tasks (id TEXT,assignee TEXT,status TEXT,title TEXT,block_kind TEXT,created_at INTEGER); CREATE TABLE task_runs (id INTEGER,task_id TEXT,status TEXT,outcome TEXT,ended_at TEXT,last_heartbeat_at INTEGER,started_at INTEGER,claim_expires INTEGER);").unwrap();
+    db.execute_batch("PRAGMA journal_mode=WAL; CREATE TABLE tasks (id TEXT,assignee TEXT,status TEXT,title TEXT,block_kind TEXT,created_at INTEGER); CREATE TABLE task_runs (id INTEGER,task_id TEXT,status TEXT,outcome TEXT,ended_at TEXT,last_heartbeat_at INTEGER,started_at INTEGER,claim_expires INTEGER);").unwrap();
+    drop(db);
+    assert!(!root.join("kanban.db-wal").exists());
     let r = collect_with(
         &root,
         &"a".repeat(64),
         std::path::Path::new(env!("CARGO_BIN_EXE_pixel-ops")),
     )
     .unwrap();
+    assert!(
+        !r.snapshot.kanban.partial,
+        "closed WAL must stay readable inside the sandbox"
+    );
+    assert!(!root.join("kanban.db-wal").exists());
+    assert!(!root.join("kanban.db-shm").exists());
     assert_eq!(r.snapshot.agents.len(), 1);
     assert_eq!(r.snapshot.agents[0].display_name, "Local Fixture");
     let json = serde_json::to_string(&r).unwrap();
