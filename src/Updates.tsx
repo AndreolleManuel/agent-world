@@ -67,13 +67,23 @@ const errors: Record<string, string> = {
   update_restore: 'Remplacement interrompu. L’ancienne app est conservée dans le dossier masqué .agent-world-backup à côté de l’app. Restaurez-la avant de fermer cette fenêtre.',
 };
 
-export default function UpdateControl() {
+export default function UpdateControl({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
   const context = useContext(UpdatesContext);
   const [open, setOpen] = useState(false);
   if (!context) return null;
   const { status, pending } = context;
-  const label = status.phase === 'available' ? `Mise à jour ${status.version} disponible` : busy(status) ? 'Mise à jour en cours…' : 'Mises à jour';
-  return <><button className={`update-trigger${status.phase === 'available' ? ' update-available' : ''}`} onClick={() => setOpen(true)}>{label}</button>
+  const installing = ['downloading', 'installing', 'restarting'].includes(status.phase);
+  const visible = alwaysVisible || status.phase === 'available' || installing || (status.phase === 'error' && status.version !== null);
+  const label = status.phase === 'available' ? `Nouvelle version · ${status.version}`
+    : status.phase === 'downloading' ? 'Téléchargement de la mise à jour…'
+    : status.phase === 'installing' ? 'Installation de la mise à jour…'
+    : status.phase === 'restarting' ? 'Redémarrage…'
+    : status.phase === 'checking' ? 'Recherche de mises à jour…'
+    : 'Vérifier les mises à jour';
+  return <>{visible && <button className={`update-trigger${status.phase === 'available' ? ' update-available' : ''}`} onClick={() => {
+    setOpen(true);
+    if (alwaysVisible && !pending && ['idle', 'current', 'error'].includes(status.phase)) context.check();
+  }}>{label}</button>}
     {open && <UpdateDialog context={context} onClose={() => setOpen(false)} pending={pending} />}</>;
 }
 

@@ -132,6 +132,10 @@ fn permitted_redirect(url: &Url) -> bool {
             && url.host_str() == Some("release-assets.githubusercontent.com"))
 }
 fn client(timeout: u64) -> Result<Client, &'static str> {
+    // reqwest's rustls-no-provider feature requires explicit initialization, even
+    // when the ring provider is the only one compiled into rustls. Installation
+    // is process-wide and race-safe; Err simply means another call installed it.
+    let _ = rustls::crypto::ring::default_provider().install_default();
     Client::builder()
         .https_only(true)
         .no_proxy()
@@ -574,6 +578,21 @@ pub async fn install_app_update(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn https_client_initializes_its_crypto_provider() {
+        assert!(client(20).is_ok());
+        assert!(client(20).is_ok());
+    }
+    #[test]
+    #[ignore = "requires the real public GitHub endpoint"]
+    fn public_endpoint_completes_within_the_request_deadline() {
+        let start = Instant::now();
+        let result = tauri::async_runtime::block_on(async {
+            fetch(&client(20).unwrap(), ENDPOINT, MAX_MANIFEST, None).await
+        });
+        assert!(start.elapsed() < Duration::from_secs(25));
+        assert!(result.is_ok() || result == Err("update_not_published"));
+    }
     #[test]
     #[ignore = "requires an isolated signed fixture; see scripts/test-update-install.py"]
     fn signed_bundle_roundtrip() {
