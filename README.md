@@ -82,7 +82,7 @@ L’exporteur reste un composant de confiance, car il lit des bases pouvant cont
 
 ## Mises à jour
 
-**Mises à jour depuis l’app :** une nouvelle release GitHub peut être signalée en bas du laboratoire. Le bouton permet de lire ses notes, puis d’installer le paquet vérifié et de redémarrer après confirmation. La vérification au lancement est désactivable ; aucun programme n’est téléchargé sans votre action.
+**Mises à jour depuis l’app :** une nouvelle release GitHub peut être signalée en bas du laboratoire. Le bouton permet de lire ses notes, puis d’installer le paquet vérifié et de redémarrer après confirmation. La vérification automatique, à l’ouverture puis toutes les 24 heures tant que l’app reste ouverte, est désactivable ; aucun programme n’est téléchargé sans votre action.
 
 Cette version embarque la clé publique du canal signé décrit dans [UPDATES.md](docs/UPDATES.md). Les anciens téléchargements sans ce mécanisme restent à remplacer une fois manuellement. Les réglages sont conservés séparément de l’application.
 

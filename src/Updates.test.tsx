@@ -16,7 +16,7 @@ beforeEach(() => {
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 it('checks once under StrictMode but never installs automatically; displays notes as text', async () => {
   const service = backend(); show(service);
@@ -65,4 +65,54 @@ it('keeps the laboratory quiet while checking and when no update is available', 
   expect(screen.queryByRole('button')).toBeNull();
   await act(async () => { finish({ ...idle, phase: 'current' }); });
   expect(screen.queryByRole('button')).toBeNull();
+});
+
+const day = 24 * 60 * 60 * 1000;
+async function startClocked(service: UpdateBackend) {
+  vi.useFakeTimers(); show(service);
+  await act(async () => {});
+  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+}
+
+it('checks once every 24 hours while open, without installing or duplicating on focus', async () => {
+  const service = backend(); await startClocked(service);
+  expect(service.check).toHaveBeenCalledTimes(1);
+  await act(async () => { await vi.advanceTimersByTimeAsync(day - 1); });
+  fireEvent(window, new Event('focus'));
+  expect(service.check).toHaveBeenCalledTimes(1);
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(service.check).toHaveBeenCalledTimes(2);
+  await act(async () => { await vi.advanceTimersByTimeAsync(day); });
+  expect(service.check).toHaveBeenCalledTimes(3);
+  expect(service.install).not.toHaveBeenCalled();
+});
+
+it('checks on return after sleep only if the 24-hour deadline has passed', async () => {
+  const service = backend(); await startClocked(service);
+  vi.setSystemTime(Date.now() + day + 5000);
+  await act(async () => { fireEvent(window, new Event('focus')); });
+  expect(service.check).toHaveBeenCalledTimes(2);
+  await act(async () => { fireEvent(window, new Event('focus')); fireEvent(document, new Event('visibilitychange')); });
+  expect(service.check).toHaveBeenCalledTimes(2);
+});
+
+it('disabling automatic checks cancels daily checks, including after sleep', async () => {
+  const service = backend(); await startClocked(service);
+  fireEvent.click(screen.getByRole('button', { name: 'Nouvelle version · 0.3.0' }));
+  fireEvent.click(screen.getByRole('checkbox', { name: 'Vérifier automatiquement' }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(day * 2); fireEvent(window, new Event('focus')); });
+  expect(service.check).toHaveBeenCalledTimes(1);
+  expect(localStorage.getItem('agent-world.check-updates')).toBe('false');
+});
+
+it('a manual check postpones the next automatic check for 24 hours', async () => {
+  const service = backend(); await startClocked(service);
+  await act(async () => { await vi.advanceTimersByTimeAsync(day / 2); });
+  fireEvent.click(screen.getByRole('button', { name: 'Nouvelle version · 0.3.0' }));
+  await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Vérifier les mises à jour' })); });
+  expect(service.check).toHaveBeenCalledTimes(2);
+  await act(async () => { await vi.advanceTimersByTimeAsync(day - 1); });
+  expect(service.check).toHaveBeenCalledTimes(2);
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(service.check).toHaveBeenCalledTimes(3);
 });

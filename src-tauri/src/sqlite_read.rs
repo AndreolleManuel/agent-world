@@ -529,7 +529,14 @@ mod tests {
             ),
             Err(QueryError::Busy)
         ));
-        assert!(start.elapsed() < Duration::from_millis(500));
+        // The one-second query budget includes waiting for READ_GATE while
+        // other tests exercise their own bounded queries. Do not compare that
+        // total against a shorter wall-clock limit; allow scheduling jitter.
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed < Duration::from_millis(1250),
+            "locked query exceeded its one-second budget plus scheduling margin: {elapsed:?}"
+        );
         assert!(matches!(
             query(&path, "SELECT x FROM t", 1024, Instant::now()),
             Err(QueryError::Timeout)

@@ -4,7 +4,7 @@ Aucun envoi automatique vers AM Labs, compte cloud, suivi d’usage ou rapport d
 
 ## Trajet des données
 
-La vérification des mises à jour contacte automatiquement GitHub au lancement lorsqu’elle est activée et qu’une clé de publication est embarquée. Elle peut être désactivée dans **Mises à jour**. GitHub et son CDN voient l’adresse IP et l’agent HTTP générique, sans identifiant de suivi, cookie, donnée Hermes, clé SSH ou information sur le VPS. Le téléchargement du programme demande une action de l’utilisateur. La préférence de vérification est conservée localement dans le stockage de la WebView, séparément des réglages Hermes. Voir [UPDATES.md](UPDATES.md).
+La vérification des mises à jour contacte automatiquement GitHub à l’ouverture, puis toutes les 24 heures tant que l’app reste ouverte, lorsqu’elle est activée et qu’une clé de publication est embarquée. Elle peut être désactivée dans **Mises à jour**. GitHub et son CDN voient l’adresse IP et l’agent HTTP générique, sans identifiant de suivi, cookie, donnée Hermes, clé SSH ou information sur le VPS. Le téléchargement du programme demande une action de l’utilisateur. La préférence de vérification est conservée localement dans le stockage de la WebView, séparément des réglages Hermes. Voir [UPDATES.md](UPDATES.md).
 
 Sur VPS : fichiers Hermes → exporteur isolé administré sur le serveur → snapshot minimal → lecteur `aw-view` → canal SSH direct → validation Rust sur le Mac → interface. La requête contient uniquement la version de protocole. Elle ne contient ni SQL, ni chemin, ni nom de tâche. Sur Mac, un helper isolé lit la racine approuvée puis transmet le même format minimal à l’app.
 

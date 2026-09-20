@@ -4,11 +4,12 @@ Cette version ajoute les mises à jour signées dans l’app et les nouvelles bu
 
 ## Contrôles avant publication
 
-- Interface : 143 tests dans 21 suites, TypeScript et build de production réussis.
+- Interface : 147 tests dans 21 suites, TypeScript et build de production réussis.
 - Distribution : 24 tests des scripts réussis ; export explicite des sources publiques, sans historique privé ni fichiers de travail.
 - Natif : 79 tests de l’app réussis, dont les refus réels de fichiers privés, réseau et création de processus dans la sandbox du lecteur macOS ; Clippy sans avertissement.
 - HTTPS natif : initialisation explicite du moteur cryptographique et test de régression ; le libellé de recherche est distinct des phases de téléchargement et d’installation.
 - Mise à jour : test supplémentaire sur une app factice isolée et un manifeste réellement signé. Signature valide acceptée, manifeste/paquet altérés refusés, mauvaise version interne refusée, installation valide et sauvegarde de l’ancienne app vérifiées. Les tests de remplacement vérifient aussi la restauration après un échec du second renommage.
+- Vérification quotidienne : horloge simulée sur 48 heures, retour de veille, désactivation et report après une recherche manuelle ; aucun téléchargement automatique.
 - Interface via navigateur/MCP : notification et fenêtre inspectées visuellement ; scénarios « nouvelle version », « à jour », « hors ligne » et « signature invalide » vérifiés, sans débordement horizontal observé. Ces scénarios simulent l’installation et ne constituent pas un essai de téléchargement public.
 - Build universel macOS : arm64 et x86_64, signature ad hoc valide. La présence de x86_64 ne signifie pas qu’un Mac Intel a été testé.
 - Clé de publication de mise à jour créée par le mainteneur, chiffrée et extérieure au dépôt ; seule sa partie publique est embarquée. Création et signature interactives éprouvées séparément avec une clé factice.

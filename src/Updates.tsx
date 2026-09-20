@@ -12,6 +12,7 @@ const native: UpdateBackend = {
 };
 const initial: UpdateStatus = { phase: 'idle', currentVersion: '', version: null, notes: null, downloaded: 0, total: null, error: null };
 const preference = 'agent-world.check-updates';
+const automaticInterval = 24 * 60 * 60 * 1000;
 const busy = (status: UpdateStatus) => ['checking', 'downloading', 'installing', 'restarting'].includes(status.phase);
 type Context = { status: UpdateStatus; automatic: boolean; setAutomatic(value: boolean): void; check(): void; install(): void; pending: boolean; demo: boolean };
 const UpdatesContext = createContext<Context | null>(null);
@@ -21,10 +22,13 @@ export function UpdateProvider({ children, backend, demo = false }: { children: 
   const [status, setStatus] = useState(initial);
   const [pending, setPending] = useState(false);
   const [automatic, setAutomaticState] = useState(() => { try { return localStorage.getItem(preference) !== 'false'; } catch { return false; } });
-  const started = useRef(false);
+  const [ready, setReady] = useState(false);
+  const [checkSequence, setCheckSequence] = useState(0);
+  const lastCheck = useRef<number | null>(null);
   const operation = useRef(false);
   const perform = async (action: 'check' | 'install') => {
     if (!available || operation.current) return;
+    if (action === 'check') { lastCheck.current = Date.now(); setCheckSequence(value => value + 1); }
     operation.current = true; setPending(true);
     try { setStatus(await available[action]()); }
     catch { setStatus(s => ({ ...s, phase: 'error', error: 'update_unavailable' })); }
@@ -36,11 +40,32 @@ export function UpdateProvider({ children, backend, demo = false }: { children: 
     void available.status().then(s => {
       if (!active) return;
       setStatus(s);
-      if (!started.current && automatic && s.phase !== 'unconfigured') { started.current = true; void perform('check'); }
+      setReady(true);
     }).catch(() => { if (active) setStatus(s => ({ ...s, phase: 'error', error: 'update_unavailable' })); });
     return () => { active = false; };
-    // One check at startup; manual checks remain available after changing the preference.
   }, [available]);
+  useEffect(() => {
+    if (!available || !ready || !automatic || pending || busy(status) || status.phase === 'unconfigured') return;
+    const remainingDelay = () => lastCheck.current === null ? 0 : Math.max(0, lastCheck.current + automaticInterval - Date.now());
+    let timer: number;
+    const schedule = () => {
+      window.clearTimeout(timer);
+      const remaining = remainingDelay();
+      if (remaining <= 0) void perform('check');
+      else timer = window.setTimeout(schedule, remaining);
+    };
+    // Re-evaluate the wall clock after sleep/background suspension; no extra
+    // request is made on focus if the 24-hour deadline has not been reached.
+    const resume = () => { if (document.visibilityState !== 'hidden') schedule(); };
+    timer = window.setTimeout(schedule, remainingDelay());
+    window.addEventListener('focus', resume);
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', resume);
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }, [available, ready, automatic, pending, status.phase, checkSequence]);
   useEffect(() => {
     if (!available || !pending) return;
     let active = true;
@@ -115,7 +140,8 @@ function UpdateDialog({ context, onClose, pending }: { context: Context; onClose
       {status.phase === 'available' && <button className="update-install" onClick={install} disabled={working}>{demo ? 'Simuler l’installation' : 'Installer et redémarrer'}</button>}
       <button onClick={check} disabled={working || status.phase === 'unconfigured'}>Vérifier les mises à jour</button>
     </div>
-    <label className="update-preference"><input type="checkbox" checked={automatic} onChange={e => setAutomatic(e.target.checked)} />Vérifier au lancement</label>
+    <label className="update-preference"><input type="checkbox" checked={automatic} onChange={e => setAutomatic(e.target.checked)} />Vérifier automatiquement</label>
+    <p className="update-privacy">À l’ouverture, puis toutes les 24 h tant que l’app reste ouverte.</p>
     <p className="update-privacy">{demo ? 'Démonstration locale : aucun téléchargement ni redémarrage.' : 'La vérification contacte GitHub. Aucune donnée Hermes, clé SSH ou information sur votre VPS n’est envoyée. L’installation attend votre confirmation et conserve vos réglages.'}</p>
   </dialog>;
 }
