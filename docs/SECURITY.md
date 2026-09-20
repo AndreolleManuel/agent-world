@@ -27,7 +27,7 @@ Les lockfiles et actions CI sont épinglés ; PR sans secrets de publication. Au
 
 Le canal de mise à jour Mac est isolé des états Hermes/VPS : destinations HTTPS fixes, signature minisign du manifeste vérifiée avant lecture, taille/empreinte de l’archive liées par ce manifeste, version strictement supérieure, extraction bornée sans liens, contrôle de l’identité/version et de l’intégrité du bundle, confirmation native et sauvegarde avant remplacement. Aucun URL, chemin, programme ou argument d’installation ne vient de l’interface. Les composants VPS restent administrés séparément. La clé privée de mise à jour constitue une autorité de publication de code : une clé compromise ou un mainteneur malveillant sont hors de cette garantie. Voir [UPDATES.md](UPDATES.md).
 
-Le candidat Mac est signé ad hoc et non notarisé. Developer ID, recette macOS minimum/Intel, signature officielle du paquet serveur et publication restent des conditions séparées ; aucune validation CI distante n’est déduite de la seule présence d’un workflow. Voir [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md).
+Le candidat Mac est signé ad hoc et non notarisé. Developer ID, recette macOS minimum/Intel, signature officielle du paquet serveur et publication restent des conditions séparées ; aucune validation CI distante n’est déduite de la seule présence d’un workflow. Voir [VALIDATION-0.2.1.md](VALIDATION-0.2.1.md).
 
 Références de conception : [OpenSSH sshd_config](https://man.openbsd.org/sshd_config), [Tauri capabilities](https://tauri.app/security/capabilities/), [Apple OpenSSH](https://github.com/apple-oss-distributions/OpenSSH), [systemd.exec](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html).
 

@@ -8,4 +8,4 @@ Le laboratoire VPS est une **VM jetable dédiée uniquement**, avec utilisateur 
 
 Pour un retour : version exacte, OS/architecture, étape, code d'erreur, résultat attendu et obtenu, données synthétiques permettant de reproduire. Ne pas envoyer de clé, phrase secrète, fichier `.env`, base Hermes, conversations ou snapshot privé. Pour une vulnérabilité, voir la politique `SECURITY.md` du dépôt et éviter une issue publique contenant les détails exploitables.
 
-Une compilation ou un test unitaire ne prouve pas une installation téléchargée avec quarantaine, une compatibilité Intel/macOS minimum ou toutes les distributions Linux. Le [rapport de validation](VALIDATION-0.2.0.md) sépare ces faits.
+Une compilation ou un test unitaire ne prouve pas une installation téléchargée avec quarantaine, une compatibilité Intel/macOS minimum ou toutes les distributions Linux. Le [rapport de validation](VALIDATION-0.2.1.md) sépare ces faits.

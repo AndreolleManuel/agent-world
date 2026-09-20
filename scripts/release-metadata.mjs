@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-export const RELEASE_DOCUMENTS = ['INSTALLATION.md', 'TEST-BETA.md', 'BETA-MAC.md', 'VPS.md', 'SECURITY.md', 'PRIVACY.md', 'PUBLICATION.md', 'PROTOCOL.md', 'VALIDATION-0.2.0.md', 'SIGNATURES.md', 'UPDATES.md', 'agent-world-updater.pub', 'agent-world-release.pub', 'allowed-signers'];
+export const RELEASE_DOCUMENTS = ['INSTALLATION.md', 'TEST-BETA.md', 'BETA-MAC.md', 'VPS.md', 'SECURITY.md', 'PRIVACY.md', 'PUBLICATION.md', 'PROTOCOL.md', 'VALIDATION-0.2.0.md', 'VALIDATION-0.2.1.md', 'SIGNATURES.md', 'UPDATES.md', 'agent-world-updater.pub', 'agent-world-release.pub', 'allowed-signers'];
 export const RELEASE_ROOT_DOCUMENTS = ['LICENSE', 'THIRD_PARTY_NOTICES.md'];
 
 export function sourceStamp(root) {

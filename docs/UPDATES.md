@@ -1,6 +1,6 @@
 # Mises à jour depuis l’app
 
-Le bouton **Mises à jour**, en bas du laboratoire et de la configuration, permet de vérifier les versions et d’installer une mise à jour après confirmation native. La vérification au lancement est activée par défaut et désactivable dans cette fenêtre. Il n’y a ni téléchargement automatique du programme ni installation silencieuse. Une app compilée sans clé affiche explicitement que cette fonction n’est pas activée.
+Le bouton **Nouvelle version** apparaît en bas du laboratoire uniquement lorsqu’une mise à jour est disponible. La configuration garde un bouton **Vérifier les mises à jour** pour lancer une recherche manuelle. L’installation demande une confirmation native. La vérification au lancement est activée par défaut et désactivable dans cette fenêtre. Il n’y a ni téléchargement automatique du programme ni installation silencieuse. Une app compilée sans clé affiche explicitement que cette fonction n’est pas activée.
 
 Le canal suit la dernière release GitHub ordinaire du dépôt `AndreolleManuel/agent-world`. Un commit, un tag seul, un brouillon ou une prerelease ne déclenchent pas de mise à jour. Le mot « bêta » dans la présentation du projet reste possible, mais une release marquée « pre-release » par GitHub n’alimente pas ce canal.
 

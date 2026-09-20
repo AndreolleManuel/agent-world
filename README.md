@@ -26,7 +26,7 @@
 <p align="center"><sub>Capture du mode démo, avec des données simulées. Les animations sont décoratives ; les états reposent sur les preuves d’activité disponibles.</sub></p>
 
 > [!NOTE]
-> **Version 0.2.0 — candidat pour développeurs, pas encore publié.**
+> **Version 0.2.1 — bêta pour développeurs.** Les téléchargements sont regroupés dans les [Releases GitHub](https://github.com/AndreolleManuel/agent-world/releases) ; vérifiez le numéro de version proposé.
 > Les anciennes archives publiques 0.1.x utilisent un autre modèle d’accès VPS et ne contiennent pas les protections de cette version.
 
 ## Un aperçu de votre équipe
@@ -49,7 +49,7 @@ Hermes doit déjà être installé pour utiliser une source réelle. Pour décou
 | **Sur votre Mac** | Ouvrir l’app, choisir « Sur ce Mac », détecter Hermes et autoriser la lecture locale. |
 | **Sur votre VPS** | Préparer le lecteur sur **Debian 13 ARM64 avec OpenSSH et systemd**, puis utiliser une clé SSH dédiée. [Guide VPS](docs/VPS.md). |
 
-Avec une archive de test 0.2.0 fournie par le mainteneur :
+Avec l’archive 0.2.1 publiée par le mainteneur :
 
 1. [Vérifier les fichiers et leur signature](docs/SIGNATURES.md).
 2. Extraire l’archive et placer **Agent World.app** dans **Applications**.
@@ -57,7 +57,7 @@ Avec une archive de test 0.2.0 fournie par le mainteneur :
 
 **L’application Mac n’est pas notarisée.** macOS peut bloquer la première ouverture. Le [guide d’installation](docs/INSTALLATION.md) explique l’exception individuelle, sans désactiver Gatekeeper globalement.
 
-Le projet vise les versions récentes de macOS sur Apple Silicon. La version exacte utilisée pour la recette figure dans le [rapport de validation](docs/VALIDATION-0.2.0.md) ; elle ne limite pas l’app à cette seule version. La présence d’un binaire Intel dans l’archive ne constitue pas une annonce de compatibilité Intel.
+Le projet vise les versions récentes de macOS sur Apple Silicon. La version exacte utilisée pour la recette figure dans le [rapport de validation](docs/VALIDATION-0.2.1.md) ; elle ne limite pas l’app à cette seule version. La présence d’un binaire Intel dans l’archive ne constitue pas une annonce de compatibilité Intel.
 
 ## Essayer la démo
 
@@ -84,7 +84,7 @@ L’exporteur reste un composant de confiance, car il lit des bases pouvant cont
 
 **Mises à jour depuis l’app :** une nouvelle release GitHub peut être signalée en bas du laboratoire. Le bouton permet de lire ses notes, puis d’installer le paquet vérifié et de redémarrer après confirmation. La vérification au lancement est désactivable ; aucun programme n’est téléchargé sans votre action.
 
-La première distribution équipée doit embarquer la clé publique définitive et utiliser le canal signé décrit dans [UPDATES.md](docs/UPDATES.md). Les anciens téléchargements et les builds sans clé restent à remplacer manuellement. Les réglages sont conservés séparément de l’application.
+Cette version embarque la clé publique du canal signé décrit dans [UPDATES.md](docs/UPDATES.md). Les anciens téléchargements sans ce mécanisme restent à remplacer une fois manuellement. Les réglages sont conservés séparément de l’application.
 
 Les composants VPS se mettent à jour séparément par l’administrateur, avec sauvegarde et possibilité de retour arrière. Ne pas les remplacer automatiquement avec l’app Mac. [Installation et migration](docs/INSTALLATION.md) · [Maintenance VPS](docs/VPS.md).
 

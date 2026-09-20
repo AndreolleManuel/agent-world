@@ -1,6 +1,6 @@
-# Agent World 0.2.0 — installation Mac
+# Agent World 0.2.1 — installation Mac
 
-Candidat pour développeurs, gratuit et open source. Hermes doit déjà fonctionner. Les archives publiques 0.1.x suivent un ancien modèle de connexion : ne pas les confondre avec ce candidat.
+Version pour développeurs, gratuite et open source. Hermes doit déjà fonctionner. Les archives publiques 0.1.x suivent un ancien modèle de connexion : ne pas les confondre avec cette version.
 
 ## Depuis les sources
 
@@ -15,13 +15,13 @@ npm run build:beta -- --bundles app
 npm run package:beta
 ```
 
-Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256SUMS`. Le hash détecte une modification ; il n’authentifie pas à lui seul l’auteur. La distribution finale du mainteneur ajoute une signature de l’inventaire : voir [SIGNATURES.md](SIGNATURES.md). Une bêta publique doit provenir de la [page Releases du dépôt officiel](https://github.com/AndreolleManuel/agent-world/releases) et annoncer explicitement 0.2.0. Aucun lien vers un fichier inexistant n’est fourni.
+Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256SUMS`. Le hash détecte une modification ; il n’authentifie pas à lui seul l’auteur. La distribution finale du mainteneur ajoute une signature de l’inventaire : voir [SIGNATURES.md](SIGNATURES.md). Cette bêta doit provenir de la [page Releases du dépôt officiel](https://github.com/AndreolleManuel/agent-world/releases) et annoncer explicitement 0.2.1. Les trois fichiers du canal de mise à jour intégré sont décrits dans [UPDATES.md](UPDATES.md).
 
 ## Bundle Mac
 
 Extraire l’archive, placer Agent World.app dans Applications, puis ouvrir l’app. La build ad hoc n’est pas notarisée : Gatekeeper peut la bloquer. Ne pas désactiver Gatekeeper ni enlever globalement la quarantaine. Si le candidat est identifié et accepté, suivre l’exception individuelle décrite par [Apple](https://support.apple.com/fr-fr/102445). Une alerte « malveillant », « endommagé » ou « modifié » demande d’arrêter et vérifier le fichier.
 
-Application pour **Mac Apple Silicon**. La version de macOS utilisée pour les essais est consignée dans [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md) ; elle ne limite pas l’installation à cette seule version. Le projet vise les versions récentes de macOS sans promettre le support des anciennes versions. Le seuil technique de compilation à 12.3 ne constitue pas une garantie de compatibilité depuis cette version. Le bundle contient aussi une architecture Intel, non incluse dans le périmètre annoncé.
+Application pour **Mac Apple Silicon**. La version de macOS utilisée pour les essais est consignée dans [VALIDATION-0.2.1.md](VALIDATION-0.2.1.md) ; elle ne limite pas l’installation à cette seule version. Le projet vise les versions récentes de macOS sans promettre le support des anciennes versions. Le seuil technique de compilation à 12.3 ne constitue pas une garantie de compatibilité depuis cette version. Le bundle contient aussi une architecture Intel, non incluse dans le périmètre annoncé.
 
 Mode distant : **Debian 13 ARM64 avec OpenSSH et systemd**, après préparation administrative.
 

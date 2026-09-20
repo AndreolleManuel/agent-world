@@ -8,7 +8,7 @@ Publier uniquement un instantané de sources explicitement sélectionnées, avec
 
 Contrôler lint, tests, build, audits npm/RustSec, notices, licences des visuels et `npm run audit:public -- --history`. Compiler depuis la révision exacte, vérifier le paquet et écrire les limites dans ses notes. Les workflows ne publient rien, ne créent pas de tag et ne donnent aucun secret aux PR.
 
-La version 0.2.0 reste un candidat tant que sa mise en ligne n'est pas décidée. Ne pas renvoyer vers l'ancienne 0.1.x comme si elle contenait les protections du protocole 2. Une éventuelle release doit inclure code, guides, artefact exact, état de validation, hashes et signature pertinente. Aucun paquet serveur précompilé ne doit être présenté comme authentifié sans signature et clé de confiance publiées séparément.
+La version 0.2.1 de l’app introduit le canal de mises à jour signé et conserve le protocole 2 ; les composants serveur restent en 0.2.0. Ne pas renvoyer vers l’ancienne 0.1.x comme si elle contenait ces protections. Une release doit inclure code, guides, artefact exact, état de validation, hashes et signature pertinente. Aucun paquet serveur précompilé ne doit être présenté comme authentifié sans signature et clé de confiance publiées séparément.
 
 ## Avant activation du lien du site
 
