@@ -11,6 +11,7 @@ npm ci
 npm run lint
 npm test
 cargo test --locked --manifest-path src-tauri/Cargo.toml
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
 npm run build:beta -- --bundles app
 npm run package:beta
 ```
@@ -19,7 +20,7 @@ Le dossier produit contient l’app, les guides, `BUILD-STATUS.json` et `SHA256S
 
 ## Bundle Mac
 
-Extraire l’archive, placer Agent World.app dans Applications, puis ouvrir l’app. La build ad hoc n’est pas notarisée : Gatekeeper peut la bloquer. Ne pas désactiver Gatekeeper ni enlever globalement la quarantaine. Si le candidat est identifié et accepté, suivre l’exception individuelle décrite par [Apple](https://support.apple.com/fr-fr/102445). Une alerte « malveillant », « endommagé » ou « modifié » demande d’arrêter et vérifier le fichier.
+Extraire l’archive, placer Agent World.app dans votre dossier Applications personnel (`~/Applications`, à créer si nécessaire), puis ouvrir l’app. Ce dossier permet le remplacement de l’app sans droits administrateur. La build ad hoc n’est pas notarisée : Gatekeeper peut la bloquer. Ne pas désactiver Gatekeeper ni enlever globalement la quarantaine. Si le candidat est identifié et accepté, suivre l’exception individuelle décrite par [Apple](https://support.apple.com/fr-fr/102445). Une alerte « malveillant », « endommagé » ou « modifié » demande d’arrêter et vérifier le fichier.
 
 Application pour **Mac Apple Silicon**. La version de macOS utilisée pour les essais est consignée dans [VALIDATION-0.2.1.md](VALIDATION-0.2.1.md) ; elle ne limite pas l’installation à cette seule version. Le projet vise les versions récentes de macOS sans promettre le support des anciennes versions. Le seuil technique de compilation à 12.3 ne constitue pas une garantie de compatibilité depuis cette version. Le bundle contient aussi une architecture Intel, non incluse dans le périmètre annoncé.
 
@@ -37,13 +38,13 @@ L’administrateur prépare d’abord le service séparé décrit dans [VPS.md](
 
 ## Migration, mise à jour, retrait
 
-Les builds équipés de la clé de publication proposent **Mises à jour** en bas de l’app : vérification au lancement désactivable, notes de version, installation après confirmation native et redémarrage. Aucun téléchargement du programme n’est automatique. Voir le canal signé, les limites et la restauration dans [UPDATES.md](UPDATES.md). Les anciens téléchargements sans ce mécanisme nécessitent encore un remplacement manuel.
+La version 0.2.1 vérifie les mises à jour à l’ouverture, puis toutes les 24 heures tant que l’app reste ouverte. **Nouvelle version · …** apparaît en bas du laboratoire uniquement lorsqu’une version est disponible. Le bouton affiche les notes, puis propose l’installation après confirmation native et le redémarrage. Pour une recherche manuelle ou pour désactiver **Vérifier automatiquement**, ouvrir **Configurer mes agents → Vérifier les mises à jour** ; il n’est pas nécessaire de modifier les agents. Aucun téléchargement du programme n’est automatique. Voir le canal signé, les limites et la restauration dans [UPDATES.md](UPDATES.md). Les anciens téléchargements sans ce mécanisme nécessitent encore un remplacement manuel.
 
 Pour une mise à jour manuelle du Mac :
 
 1. Lire les notes de version et les éventuelles consignes de migration.
 2. Télécharger l’archive du mainteneur et vérifier sa signature selon [SIGNATURES.md](SIGNATURES.md).
-3. Fermer complètement Agent World, puis remplacer l’application dans Applications.
+3. Fermer complètement Agent World, puis remplacer l’application dans son dossier Applications personnel.
 4. Relancer et vérifier les agents, la source sélectionnée et la fraîcheur de la lecture.
 
 Les réglages sont stockés séparément de l’application et conservés lors de son remplacement. Une nouvelle version de l’app ne met pas à jour les composants VPS : l’administrateur suit la procédure et les sauvegardes de [VPS.md](VPS.md) si les notes de version le demandent. Conserver l’ancienne archive et une sauvegarde privée des réglages avant une migration ; ne pas présumer qu’une ancienne app saura relire des réglages migrés.
