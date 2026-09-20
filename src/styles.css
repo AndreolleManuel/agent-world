@@ -155,7 +155,22 @@ h2 { font-size: 1.25rem; }
 html { scrollbar-gutter: stable; }
 .kanban-dialog { position: fixed; inset: 0; margin: auto; width: min(1600px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 40px); padding: 0; color: #f5effb; background: #241a30; border: 1px solid #9878b8; border-radius: 14px; box-shadow: 0 20px 90px #0009; overflow: hidden; }
 .kanban-dialog[open] { display: flex; flex-direction: column; }
-.kanban-dialog::backdrop { background: #110b20ad; }
+.kanban-dialog::backdrop, .update-dialog::backdrop { background: #110b20ad; }
+.update-trigger.update-available { border-color: #c2a0f4; color: #f2e5ff; background: #59377a; }
+.update-dialog { width: min(520px, calc(100vw - 40px)); max-height: calc(100dvh - 48px); overflow: auto; box-sizing: border-box; padding: 24px; border: 1px solid #9878b8; border-radius: 14px; color: #f5effb; background: #241a30; box-shadow: 0 20px 90px #0009; font-size: .9rem; line-height: 1.6; }
+.update-dialog header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.update-dialog h2, .update-dialog .eyebrow { margin: 0; }
+.update-dialog h3 { font-size: 1rem; }
+.update-current, .update-privacy { color: #c6b5d3; }
+.update-current { font-size: .8rem; }
+.update-notes { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; }
+.update-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+.update-dialog button { padding: 8px 12px; border-radius: 7px; font-size: .8rem; }
+.update-dialog .update-install { background: #7b4baa; border-color: #b98edb; color: white; }
+.update-preference { display: flex; gap: 10px; align-items: center; font-size: .8rem; }
+.update-preference input { width: 16px; height: 16px; accent-color: #bc8beb; }
+.update-privacy { font-size: .75rem; margin-bottom: 0; }
+.update-dialog progress { width: 100%; accent-color: #bc8beb; }
 .kanban-dialog-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 22px; border-bottom: 1px solid #655079; flex: 0 0 auto; }
 .kanban-dialog-header h2, .kanban-dialog-header p { margin: 0; }
 .kanban-dialog-content { overflow: auto; overscroll-behavior: contain; min-height: 0; }

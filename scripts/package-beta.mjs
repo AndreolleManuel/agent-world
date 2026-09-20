@@ -5,6 +5,7 @@ import { homedir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { RELEASE_DOCUMENTS, RELEASE_ROOT_DOCUMENTS, sourceStamp, verifyDocumentLinks } from './release-metadata.mjs';
 import { verifyNoticeBundle } from './verify-notices.mjs';
+import { updaterKey } from './update-metadata.mjs';
 
 const root = process.cwd();
 const version = JSON.parse(readFileSync('package.json')).version;
@@ -19,6 +20,7 @@ const appVersion = execFileSync('/usr/bin/plutil', ['-extract', 'CFBundleShortVe
 const minimumMacOS = execFileSync('/usr/bin/plutil', ['-extract', 'LSMinimumSystemVersion', 'raw', '-o', '-', join(app, 'Contents/Info.plist')], { encoding: 'utf8' }).trim();
 const source = sourceStamp(root);
 if (publicBeta) {
+  if (info.updaterKeySha256 !== updaterKey(readFileSync('docs/agent-world-updater.pub', 'utf8'))) throw Error('Public release requires the current updater public key');
   if (source.dirty) throw Error('Public beta requires committed, clean sources');
   execFileSync(process.execPath, ['scripts/audit-public.mjs', '--history'], { cwd: root, stdio: 'inherit' });
 }

@@ -16,6 +16,7 @@ src-tauri/resources/build-info.json
 *.p8
 *.pem
 *.key
+*.key.pub
 hermes-source.json
 
 reader/target/

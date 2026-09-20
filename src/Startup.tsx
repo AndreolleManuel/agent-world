@@ -9,6 +9,7 @@ import type { Preferences } from './preferences';
 import RemoteConnection, { EMPTY_SSH_SOURCE, connectionError, type SshSource } from './RemoteConnection';
 import { useSetupOperation } from './useSetupOperation';
 import CompanyLink from './CompanyLink';
+import UpdateControl from './Updates';
 import { own } from './records';
 
 export default function Startup() {
@@ -209,6 +210,7 @@ export default function Startup() {
         }}><AvatarPreview avatar={i + 1} /><span>{draft.avatars[choosingAvatar] === i + 1 ? '✓ Actuel' : 'Choisir'}</span></button>)}</div>
     </dialog>}
     <footer><p>Vos données restent entre vos machines. Agent World observe Hermes en lecture seule, sans relais AM Labs.</p>
+      <UpdateControl />
       {import.meta.env.DEV && <a href="?fixture=1">Scénarios de vérification (données fictives)</a>}
       <CompanyLink>Un outil créé par AM Labs · découvrir notre travail ↗</CompanyLink>
       {preferences.configured && <button disabled={busy || settingsInvalid} onClick={() => { requestGeneration.current++; setConfiguring(false); }}>Revenir au laboratoire</button>}

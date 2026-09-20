@@ -4,7 +4,7 @@ Objectif : limiter l’accès d’un viewer compromis aux métadonnées publiée
 
 ## Frontières
 
-1. **Interface considérée hostile.** Huit commandes IPC explicitement permises ; ni shell, ni HTTP, ni filesystem générique dans les capacités Tauri. Nouvelle source soumise à une confirmation native ; approbation associée à la source. Une seule opération de collecte à la fois, sans file illimitée. WebView limitée à l’origine de l’app, nouvelles fenêtres refusées, CSP locale.
+1. **Interface considérée hostile.** Onze commandes IPC explicitement permises, dont trois pour le canal de mise à jour fixe ; ni shell, ni HTTP, ni filesystem générique dans les capacités Tauri. Nouvelle source soumise à une confirmation native ; approbation associée à la source. Une seule opération de collecte à la fois, sans file illimitée. WebView limitée à l’origine de l’app, nouvelles fenêtres refusées, CSP locale.
 2. **Collecte locale séparée.** Helper court dans `sandbox-exec` : lecture bornée de fichiers autorisés de la racine choisie, aucune écriture Hermes, pas de connexion/écoute réseau ni création de processus. Si le mécanisme manque, échec sans repli permissif. Le système Apple utilisé doit être testé après mise à jour.
 3. **VPS séparé.** Exporteur systemd non-root, montage lecture seule, espace minimal, sans réseau, CPU/mémoire/temps limités. Lecteur sans SQLite dans un chroot distinct. Seccomp avec liste d’appels système autorisés après ouverture du snapshot ; limites mémoire/CPU/processus ; verrou de lecture. L’exporteur et root restent de confiance.
 4. **SSH.** Compte/clé dédiés, commande exacte `snapshot`, pas de shell libre ou transfert, forwarding désactivé côté serveur, empreinte obligatoire côté client. Pas d’agent SSH général, clé privée chiffrée et permissions privées. L’application ne contient plus d’installateur distant.
@@ -24,6 +24,8 @@ La sélection visuelle n’est pas un contrôle d’accès ; seuls les profils p
 ## Distribution
 
 Les lockfiles et actions CI sont épinglés ; PR sans secrets de publication. Audit de dépendances, scan des sources/historique public et notices vérifiées font partie des contrôles. Les scans par motifs ne prouvent pas l’absence de tout secret. SHA-256 vérifie l’intégrité, une signature vérifie la provenance sous réserve d’une clé de confiance indépendante.
+
+Le canal de mise à jour Mac est isolé des états Hermes/VPS : destinations HTTPS fixes, signature minisign du manifeste vérifiée avant lecture, taille/empreinte de l’archive liées par ce manifeste, version strictement supérieure, extraction bornée sans liens, contrôle de l’identité/version et de l’intégrité du bundle, confirmation native et sauvegarde avant remplacement. Aucun URL, chemin, programme ou argument d’installation ne vient de l’interface. Les composants VPS restent administrés séparément. La clé privée de mise à jour constitue une autorité de publication de code : une clé compromise ou un mainteneur malveillant sont hors de cette garantie. Voir [UPDATES.md](UPDATES.md).
 
 Le candidat Mac est signé ad hoc et non notarisé. Developer ID, recette macOS minimum/Intel, signature officielle du paquet serveur et publication restent des conditions séparées ; aucune validation CI distante n’est déduite de la seule présence d’un workflow. Voir [VALIDATION-0.2.0.md](VALIDATION-0.2.0.md).
 

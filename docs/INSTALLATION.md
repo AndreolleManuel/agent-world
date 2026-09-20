@@ -37,9 +37,9 @@ L’administrateur prépare d’abord le service séparé décrit dans [VPS.md](
 
 ## Migration, mise à jour, retrait
 
-La version 0.2.0 ne recherche ni ne télécharge automatiquement les mises à jour. La mise à jour depuis l’app est prévue pour une version ultérieure, sans date annoncée.
+Les builds équipés de la clé de publication proposent **Mises à jour** en bas de l’app : vérification au lancement désactivable, notes de version, installation après confirmation native et redémarrage. Aucun téléchargement du programme n’est automatique. Voir le canal signé, les limites et la restauration dans [UPDATES.md](UPDATES.md). Les anciens téléchargements sans ce mécanisme nécessitent encore un remplacement manuel.
 
-Pour une nouvelle version Mac :
+Pour une mise à jour manuelle du Mac :
 
 1. Lire les notes de version et les éventuelles consignes de migration.
 2. Télécharger l’archive du mainteneur et vérifier sa signature selon [SIGNATURES.md](SIGNATURES.md).

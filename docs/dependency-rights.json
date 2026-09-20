@@ -1,13 +1,13 @@
 {
   "reviewed": true,
-  "reviewedAt": "2026-09-19",
-  "noticeSha256": "739018d0abeb081af62de635930d453a8328d3992645e5d3b84421f91e63e2db",
+  "reviewedAt": "2026-09-20",
+  "noticeSha256": "f15d64b1cce039970a1d25d2a6c8ad7a213194a36de23f6cca1332e10be55d70",
   "scope": [
     "JavaScript runtime and bundled build helpers",
     "Rust macOS app, Linux exporters and readers",
     "SQLite",
     "embedded third-party notices"
   ],
-  "evidence": "281 complete notice entries cover the locked normal/build graphs. Four additions reviewed: rfd (MIT), tauri-plugin-dialog, tauri-plugin-fs and tauri-plugin (Apache-2.0 OR MIT). Tauri plugin texts retrieved from the exact crate VCS commit. Five unchanged MPL source archives verified against Cargo.lock. No missing notices.",
+  "evidence": "327 complete notice entries cover the locked normal/build graphs. The updater adds 46 runtime/build notice entries, reviewed as MIT, Apache-2.0, ISC, BSD-3-Clause or LLVM-exception alternatives; ring includes its Apache-2.0 and ISC texts. Five unchanged MPL source archives verified against Cargo.lock. No missing notices. No private keys or generated updater test fixtures are redistributed.",
   "note": "Redistribution preparation review, not independent legal certification. Original third-party licenses remain applicable. Refresh and review after dependency or target changes. Development-only and unsupported-platform metadata remains in dependency-licenses.json, not all such components ship in the app."
 }

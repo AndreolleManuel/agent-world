@@ -1,11 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Explicit local viewer commands. Source changes require independent native consent; no installer, shell, filesystem or remote-origin permissions.",
+  "description": "Explicit viewer and fixed signed-update commands. Source changes and update installation require native consent. No generic shell, filesystem, network or remote-origin permissions.",
   "windows": ["main"],
   "permissions": [
     "allow-read-world-snapshot", "allow-detect-hermes", "allow-configure-hermes",
     "allow-detect-remote-hermes", "allow-configure-remote-hermes", "allow-configured-remote",
-    "allow-recover-configuration", "allow-open-company-site"
+    "allow-recover-configuration", "allow-open-company-site",
+    "allow-app-update-status", "allow-check-app-update", "allow-install-app-update"
   ]
 }

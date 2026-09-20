@@ -29,6 +29,7 @@ import './styles.css';
 import Supervision from './Supervision';
 import KanbanDialog from './KanbanDialog';
 import CompanyLink from './CompanyLink';
+import UpdateControl from './Updates';
 import { ageEvidence, observedChanges, type ObservedEvent } from './evidenceState';
 
 const DEFAULT_REFRESH_INTERVAL_MS = 5_000;
@@ -460,6 +461,7 @@ function App(props: AppProps) {
           onSelect={(id) => { setKanbanOpen(false); setSelectedId(id); }} />
       </KanbanDialog>}
       <footer className="room-footer">
+        <UpdateControl />
         <span>Bulles et pauses imaginées pour le décor · les états affichés viennent de Hermes.</span>
         <span>Actualisation bornée · {refreshSeconds.toLocaleString('fr-FR')} s</span>
         <span>Aucune écriture distante</span>

@@ -6,7 +6,9 @@ mod remote;
 mod remote_protocol;
 mod sqlite_read;
 mod telemetry;
+mod updates;
 use remote::SshSource;
+pub use updates::verify_update_candidate;
 
 use heartbeat::{AgentHeartbeatDto, WorldSnapshotDto, resolve_hermes_root};
 use std::collections::BTreeMap;
@@ -556,6 +558,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(updates::Updates::default())
         .manage(AppState {
             hermes_root: Mutex::new(hermes_root),
             remote: Mutex::new(None),
@@ -598,7 +601,10 @@ pub fn run() {
             configure_remote_hermes,
             configured_remote,
             recover_configuration,
-            open_company_site
+            open_company_site,
+            updates::app_update_status,
+            updates::check_app_update,
+            updates::install_app_update
         ])
         .run(tauri::generate_context!())
         .expect("Pixel Ops failed to start");

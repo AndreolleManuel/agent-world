@@ -20,6 +20,7 @@
     "build:icon": "node scripts/build-icon.mjs",
     "build:beta": "node scripts/build-mac.mjs",
     "package:beta": "node scripts/package-beta.mjs",
+    "package:update": "node scripts/package-update.mjs",
     "tauri": "tauri"
   },
   "dependencies": {

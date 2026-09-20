@@ -50,25 +50,25 @@ describe('decorative agent chatter', () => {
     expect(last.y + last.height).toBeLessThan(720);
     expect(bubblePosition(6, 30, 1280, 720, [{ x: 0, y: 0, width: 1280, height: 720 }])).toBeNull();
   });
-  it('offers forty different messages in every context before starting a new lap', () => {
-    const contexts: AmbientActor[] = [
-      { id: 'solo', phase: 'live_run', interaction: 'typing-at-desk' },
-      { id: 'solo', phase: 'available', interaction: 'sitting-on-sofa' },
-      { id: 'solo', phase: 'available', interaction: 'drinking-coffee' },
-      { id: 'solo', phase: 'available', interaction: 'reading-in-lounge' },
-      { id: 'solo', phase: 'available', interaction: 'playing-handheld' },
+  it('cycles through every message in each context before starting a new lap', () => {
+    const contexts: { actor: AmbientActor; count: number }[] = [
+      { actor: { id: 'solo', phase: 'live_run', interaction: 'typing-at-desk' }, count: 44 },
+      { actor: { id: 'solo', phase: 'available', interaction: 'sitting-on-sofa' }, count: 43 },
+      { actor: { id: 'solo', phase: 'available', interaction: 'drinking-coffee' }, count: 42 },
+      { actor: { id: 'solo', phase: 'available', interaction: 'reading-in-lounge' }, count: 41 },
+      { actor: { id: 'solo', phase: 'available', interaction: 'playing-handheld' }, count: 42 },
     ];
     const all = new Set<string>();
-    for (const actor of contexts) {
-      const messages = Array.from({ length: 40 }, (_, round) => ambientCues([actor], 1000 + round * 8400)[0].text);
-      expect(new Set(messages).size).toBe(40);
+    for (const { actor, count } of contexts) {
+      const messages = Array.from({ length: count }, (_, round) => ambientCues([actor], 1000 + round * 8400)[0].text);
+      expect(new Set(messages).size).toBe(count);
       for (const message of messages) {
         expect(message.split('\n').length).toBeLessThanOrEqual(3);
         all.add(message);
       }
-      expect(ambientCues([actor], 1000 + 40 * 8400)[0].text).toBe(messages[0]);
+      expect(ambientCues([actor], 1000 + count * 8400)[0].text).toBe(messages[0]);
     }
-    expect(all.size).toBe(200);
+    expect(all.size).toBe(212);
   });
 
 });

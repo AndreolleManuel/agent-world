@@ -2164,6 +2164,15 @@
       ]
     },
     {
+      "name": "filetime",
+      "version": "0.2.29",
+      "license": "MIT/Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "find-msvc-tools",
       "version": "0.1.11",
       "license": "MIT OR Apache-2.0",
@@ -2590,6 +2599,15 @@
       ]
     },
     {
+      "name": "hyper-rustls",
+      "version": "0.27.9",
+      "license": "Apache-2.0 OR ISC OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "hyper-util",
       "version": "0.1.20",
       "license": "MIT",
@@ -2835,6 +2853,15 @@
       ]
     },
     {
+      "name": "jni-macros",
+      "version": "0.22.4",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "jni-sys-macros",
       "version": "0.4.1",
       "license": "MIT OR Apache-2.0",
@@ -2865,6 +2892,15 @@
       "name": "jni",
       "version": "0.21.1",
       "license": "MIT/Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "jni",
+      "version": "0.22.4",
+      "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -3042,6 +3078,15 @@
       "name": "mime",
       "version": "0.3.17",
       "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "minisign-verify",
+      "version": "0.2.5",
+      "license": "MIT",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -3308,6 +3353,15 @@
       "origin": "registry",
       "components": [
         "collector",
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "openssl-probe",
+      "version": "0.2.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
         "src-tauri"
       ]
     },
@@ -3689,6 +3743,15 @@
       ]
     },
     {
+      "name": "ring",
+      "version": "0.17.14",
+      "license": "Apache-2.0 AND ISC",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "rusqlite",
       "version": "0.40.2",
       "license": "MIT",
@@ -3727,6 +3790,60 @@
       ]
     },
     {
+      "name": "rustls-native-certs",
+      "version": "0.8.4",
+      "license": "Apache-2.0 OR ISC OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rustls-pki-types",
+      "version": "1.15.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rustls-platform-verifier-android",
+      "version": "0.1.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rustls-platform-verifier",
+      "version": "0.7.0",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rustls-webpki",
+      "version": "0.103.15",
+      "license": "ISC",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "rustls",
+      "version": "0.23.45",
+      "license": "Apache-2.0 OR ISC OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "rustversion",
       "version": "1.0.23",
       "license": "MIT OR Apache-2.0",
@@ -3739,6 +3856,15 @@
       "name": "same-file",
       "version": "1.0.6",
       "license": "Unlicense/MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "schannel",
+      "version": "0.1.29",
+      "license": "MIT",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -3783,6 +3909,24 @@
     {
       "name": "scopeguard",
       "version": "1.2.0",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "security-framework-sys",
+      "version": "2.17.0",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "security-framework",
+      "version": "3.7.0",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
@@ -3962,9 +4106,27 @@
       ]
     },
     {
+      "name": "simd_cesu8",
+      "version": "1.2.0",
+      "license": "Apache-2.0 OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "simd-adler32",
       "version": "0.3.10",
       "license": "MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "simdutf8",
+      "version": "0.1.5",
+      "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -4071,6 +4233,15 @@
       ]
     },
     {
+      "name": "subtle",
+      "version": "2.6.1",
+      "license": "BSD-3-Clause",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "swift-rs",
       "version": "1.0.8",
       "license": "MIT OR Apache-2.0",
@@ -4148,6 +4319,15 @@
       "name": "tao",
       "version": "0.35.3",
       "license": "Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "tar",
+      "version": "0.4.46",
+      "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -4373,6 +4553,15 @@
       "name": "tinyvec",
       "version": "1.12.0",
       "license": "Zlib OR Apache-2.0 OR MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "tokio-rustls",
+      "version": "0.26.5",
+      "license": "MIT OR Apache-2.0",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -4652,6 +4841,15 @@
       ]
     },
     {
+      "name": "untrusted",
+      "version": "0.9.0",
+      "license": "ISC",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "url",
       "version": "2.5.8",
       "license": "MIT OR Apache-2.0",
@@ -4855,6 +5053,15 @@
       "name": "webkit2gtk",
       "version": "2.0.2",
       "license": "MIT",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "webpki-root-certs",
+      "version": "1.0.9",
+      "license": "CDLA-Permissive-2.0",
       "origin": "registry",
       "components": [
         "src-tauri"
@@ -5268,6 +5475,15 @@
     },
     {
       "name": "windows-sys",
+      "version": "0.52.0",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "windows-sys",
       "version": "0.59.0",
       "license": "MIT OR Apache-2.0",
       "origin": "registry",
@@ -5430,6 +5646,15 @@
       ]
     },
     {
+      "name": "xattr",
+      "version": "1.6.1",
+      "license": "MIT OR Apache-2.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
       "name": "yoke-derive",
       "version": "0.8.2",
       "license": "Unicode-3.0",
@@ -5460,6 +5685,15 @@
       "name": "zerofrom",
       "version": "0.1.8",
       "license": "Unicode-3.0",
+      "origin": "registry",
+      "components": [
+        "src-tauri"
+      ]
+    },
+    {
+      "name": "zeroize",
+      "version": "1.9.0",
+      "license": "Apache-2.0 OR MIT",
       "origin": "registry",
       "components": [
         "src-tauri"

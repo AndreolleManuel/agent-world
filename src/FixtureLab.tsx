@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { UpdateProvider } from './Updates';
+import { updateFixture } from './updateFixture';
 import App from './App';
 import { DEV_WORLD_FIXTURE } from './devFixture';
 import type { WorldSnapshotDto } from './heartbeat';
@@ -30,6 +32,8 @@ export function scenarioWorld(scenario: string): WorldSnapshotDto {
 
 export default function FixtureLab() {
   const [scenario, setScenario] = useState('mixed');
+  const [updateScenario, setUpdateScenario] = useState('available');
+  const updates = useMemo(() => updateFixture(updateScenario), [updateScenario]);
   const load = useCallback(async () => {
     if (scenario === 'error') throw new Error('simulated_source_failure');
     return scenarioWorld(scenario);
@@ -40,5 +44,8 @@ export default function FixtureLab() {
     <option value="limit">256 agents · limite du protocole</option>
     <option value="empty">Registre vide</option><option value="error">Lecture en échec</option>
   </select></label><span>Développement uniquement · changer de scénario teste aussi les trajets</span><a href="/">Revenir aux données locales</a></div>
-    <App loadWorldSnapshot={load} dataMode="fixture" /></div>;
+    <div className="fixture-toolbar"><label>Mise à jour simulée <select value={updateScenario} onChange={e => setUpdateScenario(e.target.value)}>
+      <option value="available">Nouvelle version</option><option value="current">À jour</option><option value="offline">Hors ligne</option><option value="invalid">Signature invalide</option>
+    </select></label><span>Aucun téléchargement ni installation réels</span></div>
+    <UpdateProvider key={updateScenario} backend={updates} demo><App loadWorldSnapshot={load} dataMode="fixture" /></UpdateProvider></div>;
 }

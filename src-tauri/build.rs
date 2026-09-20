@@ -9,6 +9,9 @@ fn main() {
             "configured_remote",
             "recover_configuration",
             "open_company_site",
+            "app_update_status",
+            "check_app_update",
+            "install_app_update",
         ]),
     ))
     .expect("build application command permissions");

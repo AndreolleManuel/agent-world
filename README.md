@@ -82,13 +82,13 @@ L’exporteur reste un composant de confiance, car il lit des bases pouvant cont
 
 ## Mises à jour
 
-**La version 0.2.0 se met à jour manuellement.** Elle ne cherche pas de nouvelle version et ne télécharge aucun programme en arrière-plan.
+**Mises à jour depuis l’app :** une nouvelle release GitHub peut être signalée en bas du laboratoire. Le bouton permet de lire ses notes, puis d’installer le paquet vérifié et de redémarrer après confirmation. La vérification au lancement est désactivable ; aucun programme n’est téléchargé sans votre action.
 
-Quand une nouvelle version sera publiée : lire ses notes, vérifier l’archive et sa signature, fermer l’app puis la remplacer dans Applications. Les réglages sont conservés séparément de l’application. Toute migration nécessaire sera indiquée dans les notes de version.
+La première distribution équipée doit embarquer la clé publique définitive et utiliser le canal signé décrit dans [UPDATES.md](docs/UPDATES.md). Les anciens téléchargements et les builds sans clé restent à remplacer manuellement. Les réglages sont conservés séparément de l’application.
 
 Les composants VPS se mettent à jour séparément par l’administrateur, avec sauvegarde et possibilité de retour arrière. Ne pas les remplacer automatiquement avec l’app Mac. [Installation et migration](docs/INSTALLATION.md) · [Maintenance VPS](docs/VPS.md).
 
-**Prévu pour une prochaine version :** proposer la mise à jour directement depuis l’application. Cette fonction n’est pas encore implémentée.
+Une release publiée avec son manifeste signé déclenche la notification ; un simple commit sur GitHub ne suffit pas. Les données des agents ne sont jamais envoyées à GitHub.
 
 ## Développer et contribuer
 

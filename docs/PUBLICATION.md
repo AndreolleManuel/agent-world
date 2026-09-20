@@ -12,6 +12,8 @@ La version 0.2.0 reste un candidat tant que sa mise en ligne n'est pas décidée
 
 ## Avant activation du lien du site
 
+Préparer et embarquer la clé publique de mise à jour **avant** le premier téléchargement équipé. Publier le manifeste signé et l’archive de mise à jour selon [UPDATES.md](UPDATES.md). La clé minisign de ce canal est distincte de la clé OpenSSH existante. Un candidat signé antérieurement ne reçoit pas cette fonction rétroactivement : il faut reconstruire et signer un nouveau candidat depuis les nouvelles sources.
+
 Canal retenu : sources pour développeurs et application Mac explicitement non notarisée, sans abonnement Apple. Présentation : **Mac Apple Silicon** et, pour les composants serveur, **Debian 13 ARM64 avec OpenSSH et systemd**. La version exacte de macOS testée figure dans le rapport de recette, pas comme restriction commerciale à une version unique. Le projet vise les macOS récents sans annoncer une compatibilité historique non vérifiée. Les autres architectures et distributions ne font pas partie du périmètre annoncé ; leur compilation éventuelle ne change pas cette décision.
 
 Vérifier le lien HTTPS réel, ses redirections, le nom/version/hash réellement téléchargés, le cache du site et le parcours d’exception individuelle Gatekeeper. Cette vérification ne peut être faite avant publication de l’artefact ; ne pas inventer un résultat. La notarisation n’est pas un prérequis du canal retenu. Les paquets serveur précompilés nécessitent une signature de mainteneur vérifiable ; la compilation personnelle depuis des sources examinées reste disponible.
